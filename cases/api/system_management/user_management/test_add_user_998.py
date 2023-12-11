@@ -10,11 +10,12 @@ class TestAddUser998:
             "user_id": None,
             "user_id2": None,
         })
+        self.reg = reg
 
         # 添加用户
         var_name = "hello"
         add_user(
-            userName=var_name, nickName=var_name, password=var_name,
+            userName=var_name, nickName=var_name, password="",
             check=[
                 ["$.msg", "eq", "操作成功"],
                 ["$.code", "==", 200],
@@ -31,7 +32,7 @@ class TestAddUser998:
 
         # 删除用户
         rmv_user(
-            userId=reg.user_id,
+            userId=self.reg.user_id,
             check=[
                 ["$.msg", "eq", "操作成功"],
                 ["$.code", "==", 200],
@@ -39,4 +40,5 @@ class TestAddUser998:
         )
 
     def teardown_class(self):
+
         pass

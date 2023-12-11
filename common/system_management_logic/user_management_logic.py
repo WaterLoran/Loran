@@ -13,7 +13,10 @@ def add_user(userName="", nickName="", password=""):
         "postIds": [],
         "roleIds": []
     }
-
+    rsp_check = {
+        "msg": "操作成功",
+        "code": 200,
+    }
     return locals()
 
 

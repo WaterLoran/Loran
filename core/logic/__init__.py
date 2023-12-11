@@ -115,7 +115,7 @@ class Api:
             rsp_data = BaseApi().send(method=req_method, url=req_url, params=req_params)
 
         # API数据层的默认断言
-        ResponseData().check_api_default_expect(rsp_data, rsp_check)
+        ResponseData().check_api_default_expect(rsp_data, rsp_check, check)
 
         # 业务层的主动断言
         ResponseData().check_all_expect(rsp_data, check)
