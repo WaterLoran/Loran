@@ -1,11 +1,11 @@
 from common.ruoyi_logic import *
 
 
-class TestAddUser997:
+class TestAddUser998:
     def setup_class(self):
         pass
 
-    def test_add_user_997(self):
+    def test_add_user_998(self):
         reg = register({
             "user_id": None,
             "user_id2": None,
@@ -16,11 +16,11 @@ class TestAddUser997:
         var_name = "hello"
         var_nick_name = "操作成功"
         add_user(
-            userName=var_name, nickName=var_nick_name, password="hello123",
-            # check=[
-            #     ["$.msg", "eq", "操作成功"],
-            #     ["$.code", "==", 200],
-            # ]
+            userName=var_name, nickName=var_nick_name, password="",
+            check=[
+                ["$.msg", "eq", "操作成功"],
+                ["$.code", "==", 200],
+            ]
         )
 
         # 查看用户
@@ -31,14 +31,14 @@ class TestAddUser997:
             ]
         )
 
-        # 删除用户
-        rmv_user(
-            userId=self.reg.user_id,
-            check=[
-                ["$.msg", "eq", "操作成功"],
-                ["$.code", "==", 200],
-            ]
-        )
+        # # 删除用户
+        # rmv_user(
+        #     userId=self.reg.user_id,
+        #     check=[
+        #         ["$.msg", "eq", "操作成功"],
+        #         ["$.code", "==", 200],
+        #     ]
+        # )
 
     def teardown_class(self):
 

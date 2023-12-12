@@ -6,8 +6,10 @@ print("BASE_PATH", BASE_PATH)
 
 COMMON_PATH = os.path.join(BASE_PATH, 'common')
 CONFIG_PATH = os.path.join(BASE_PATH, 'config')
+FILES_PATH = os.path.join(BASE_PATH, 'files')
 print("COMMON_PATH", COMMON_PATH)
 print("CONFIG_PATH", CONFIG_PATH)
+# print("FILES_PATH", FILES_PATH)
 
 sys.path.append(COMMON_PATH)
 sys.path.append(CONFIG_PATH)

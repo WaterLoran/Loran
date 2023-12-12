@@ -39,8 +39,6 @@ class ResponseData:
         for each_fetch in fetch:
             self._fetch_one_value(rsp_data, each_fetch)
 
-
-
     def get_unify_compare_symbol(self, symbol):
         compare_dict = {
             "equal": ["==", "eq", "equal"],
@@ -57,7 +55,7 @@ class ResponseData:
         for key, value in compare_dict.items():
             if symbol in value:
                 return key
-        raise   # TODO 都没有在里面, 需要抛出异常和定位信息
+        raise  # TODO 都没有在里面, 需要抛出异常和定位信息
 
     def compare_action(self, compared_obj, compare_type, target):
         if compare_type == "equal":
@@ -102,7 +100,6 @@ class ResponseData:
         # TODO 如果断言结果为假, 那么需要打印相关的信息, 日志
         pass
 
-
     def check_all_expect(self, rsp_data, check):
 
         if check is None:
@@ -122,14 +119,24 @@ class ResponseData:
             self._check_one_expect(rsp_data, each_check)
         pass
 
-    def check_api_default_expect(self, rsp_data, rsp_check, check):
+    def check_api_default_expect(self, req_data, rsp_data, rsp_check, check):
         # 将rsp_check 转换成  类似于  check = [Var_a, "==", "target_value"]
-            # 递归rsp_check, 获得信息
+        # 递归rsp_check, 获得信息
         # 然后再拿这个表达式去做断言
         if not rsp_check:
             return
 
+        def judge_expression_type(expression):
+            expression_type = "string"
+            try:
+                if "$." in expression:
+                    expression_type = "regex"
+            except:
+                pass
+            return expression_type
+
         pytest_check_cache = []
+
         def traverse_json(check_data, real_rsp, path):
             nonlocal pytest_check_cache
 
@@ -137,7 +144,7 @@ class ResponseData:
                 print("这里不能是元组")
                 raise
             for key, value in check_data.items():
-                if isinstance(value, dict):
+                if isinstance(value, dict):  # 是一个字典
                     t_path = copy.deepcopy(path)
                     t_path.append(key)
                     if key not in real_rsp.keys():
@@ -159,7 +166,8 @@ class ResponseData:
                     # 判断是普通的字符串, 还是正则表达式
                     # expression_type = XX_funx()
                     t_path = copy.deepcopy(path)
-                    expression_type = "string"
+                    # expression_type = "string"
+                    expression_type = judge_expression_type(value)
                     if expression_type == "string":
                         print("根据api层预定义的单个check信息做断言")
                         print("取值的表达式类型为string")
@@ -168,18 +176,24 @@ class ResponseData:
                         if key not in real_rsp.keys():
                             print("real_rsp_has_no_such_field")
                             raise
-                        target_obj = real_rsp[key]
-                        check_obj = {
-                            "check_type": check_type,
-                            "except_obj": except_obj,
-                            "target_obj": target_obj,
-                            "path": t_path
-                        }
-                        pytest_check_cache.append(check_obj)
                     elif expression_type == "regex":  # 这里为正则表达式的时候, 设计上, 需要使用这个正则表达式去请求体中去获得数据做为期望值
+                        # 第一步, 使用jsonpath表达式去请求体中获得想响应的数据, 注意: req_json, data
+                        except_obj = jsonpath.jsonpath(req_data, value)[0]  # value就是正则表达式, 比如可能为$.nickName
+                        check_type = "regex"
+                        # 第二步, 那就跟string类型的比较大差不差
                         pass
                     else:
                         raise
+
+                    ## 更新数据到pytest_check
+                    target_obj = real_rsp[key]
+                    check_obj = {
+                        "check_type": check_type,
+                        "except_obj": except_obj,
+                        "target_obj": target_obj,
+                        "path": t_path
+                    }
+                    pytest_check_cache.append(check_obj)
 
         # 如果该请求是成功的, 我们才去做默认断言, 如果是失败的话, 就不去做默认断言
         # 请求成功, 主动断言有, 默认断言有    DO
@@ -219,5 +233,3 @@ class ResponseData:
                     print("APi数据层预定义的断言结果为假  ==>  0  <== False ==> 假 <==")
                 print("====  结束对单个API层预定义的检查项做断言  ====\n")
             print("========  结束根据API数据层定义的rsp_check做自动断言  ========\n")
-
-

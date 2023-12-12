@@ -1,3 +1,4 @@
+from core.init import *
 from .base_api import BaseApi
 from .request_data import RequeData
 from .response_data import ResponseData
@@ -81,28 +82,24 @@ class Api:
         # 获取Api数据层的相关数据
         if api_type == "json":
             req_method, req_url, req_json, rsp_check, auto_fill, teardown = Api().get_api_data("json", func, **kwargs)
-
         elif api_type == "urlencoded":
-            req_method, req_url, req_params, req_json, rsp_check, auto_fill, teardown = Api().get_api_data("urlencoded",
-                                                                                                          func,
-                                                                                                          **kwargs)
-        else:  # 其他类型的请求, 待补充
+            req_method, req_url, req_params, req_json, rsp_check, auto_fill, teardown = Api().get_api_data("urlencoded", func, **kwargs)
+        elif api_type == "form_data":
+            req_method, req_url, files, data, rsp_check = Api().get_api_data("form_data", func, **kwargs)
             pass
 
         print(f"\n\n\n开始处理新的请求, url为{req_url}")
 
         print("开始做入参填充")
         # 将业务脚本层的入参填充到请求体中
-        if auto_fill is None:  # 为False的时候, 不做填充
-            if api_type == "json":
+        if api_type == "json":
+            if auto_fill is not False:  # 为False的时候, 不做填充
                 req_json = RequeData().modify_req_body(req_json, **kwargs)
                 print("req_json", req_json)
-            elif api_type == "urlencoded":
+        elif api_type == "urlencoded":
+            if auto_fill is not False:  # 为False的时候, 不做填充
                 req_params = RequeData().modify_req_body(req_params, **kwargs)
                 print("req_params", req_params)
-        elif auto_fill is False:
-            # 不做自动填充
-            pass
         else:
             pass
         print("结束入参填充")
@@ -113,16 +110,35 @@ class Api:
             rsp_data = BaseApi().send(method=req_method, url=req_url, json=req_json)
         elif api_type == "urlencoded":  # urlencode类型的请求
             rsp_data = BaseApi().send(method=req_method, url=req_url, params=req_params)
+        elif api_type == "form_data":  # form_data类型的请求
+            print(">>files", files)
+            print("FILES_PATH", FILES_PATH)
+
+            if files is not None:
+                # 拼接出绝对路径
+                abs_file_path = os.path.join(FILES_PATH, files)
+                print("abs_file_path", abs_file_path)
+                file_obj = open(abs_file_path, 'rb')
+                files_dict = {'avatarfile': file_obj}  # 将文件放入一个字典中，字典的键是'file'
+            else:
+                files_dict = {}   # 默认没有的时候
+            rsp_data = BaseApi().send(method=req_method, url=req_url, files=files_dict, data=data)
 
         # API数据层的默认断言
-        ResponseData().check_api_default_expect(rsp_data, rsp_check, check)
+        if api_type == "json":  # json类型的请求:
+            req_data = req_json
+        elif api_type == "form_data":
+            req_data = data
+        else:  # 其他类型为空, 也就是其他场景下, 目前不会去结合请求体去做断言
+            req_data = {}
+        ResponseData().check_api_default_expect(req_data, rsp_data, rsp_check, check)
+
 
         # 业务层的主动断言
         ResponseData().check_all_expect(rsp_data, check)
 
         # 做提取信息操作
         ResponseData().fetch_all_value(rsp_data, fetch)
-
 
 
     @classmethod
@@ -140,3 +156,12 @@ class Api:
             Api().abstract_api("urlencoded", func, **kwargs)
 
         return wrapper
+
+    @classmethod
+    def form_data(self, func):
+        def wrapper(**kwargs):
+            """我是wrapper的注释"""
+            Api().abstract_api("form_data", func, **kwargs)
+
+        return wrapper
+
