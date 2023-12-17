@@ -1,4 +1,9 @@
 import jsonpath
+from core.logger import LoggerManager
+
+
+logger = LoggerManager().get_logger("main")
+
 
 
 class RequeData:
@@ -16,7 +21,7 @@ class RequeData:
                 alias_of_data = alias_of_data[path]
 
         try:
-            print("paths[-1]", paths[-1])
+            # print("paths[-1]", paths[-1])
             if paths[-1].isdigit():
                 alias_of_data[int(paths[-1])] = value
             else:
@@ -33,7 +38,7 @@ class RequeData:
         # 先找到对应key在请求体中的jsonpath路径
         jsonpath_key = "$.." + key
         found_key_res = jsonpath.jsonpath(self.req_body, jsonpath_key, result_type="IPATH")
-        print("found_key_res", found_key_res)
+        logger.debug(f"found_key_res::{found_key_res}")
         if len(found_key_res) > 1:
             raise
 
@@ -43,10 +48,13 @@ class RequeData:
 
 
     def modify_req_body(self, req_body, **kwargs):
+        logger.info(">>>>>>>>>>>>>>>  入参填充 - 开始\n")
+
         # 通过循环对入参键值对进行填充处理
         self.req_body = req_body
         for key, value in kwargs.items():
-            print("key, value", key, value)
+            logger.debug(f"入参的简直对为 {key}: {value}")
             self._modify_single(key, value)
+        logger.info("<<<<<<<<<<<<<<<<  入参填充-结束\n")
         return self.req_body
 

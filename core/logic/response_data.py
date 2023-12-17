@@ -1,7 +1,10 @@
 import copy
-
 import jsonpath
 import pytest_check
+from core.logger import LoggerManager
+
+
+logger = LoggerManager().get_logger("main")
 
 
 class ResponseData:
@@ -11,16 +14,15 @@ class ResponseData:
     def _fetch_one_value(self, rsp_data, each_fetch):
 
         # 做一个提取信息的操作
-        print("each_fetch", each_fetch)
+        logger.debug(f"_fetch_one_value::each_fetch:: {each_fetch} ")
         reg = each_fetch[0]
         reg_key = each_fetch[1]
         jsonpath_regex = each_fetch[2]
 
         target_value = jsonpath.jsonpath(rsp_data, jsonpath_regex)[0]
-        print("target_value", target_value)
+        logger.debug(f"提取出来的目标信息::target_value:: {target_value} ")
 
         reg[reg_key] = target_value
-        print("reg[reg_key]", reg[reg_key])
 
     def fetch_all_value(self, rsp_data, fetch):
         if fetch is None:
@@ -29,6 +31,7 @@ class ResponseData:
         # 判断入参的格式, 然后统一一下格式
         # 判断check传进来的参数是不是二维列表, 并处理
         change_two_dimensional_flag = False
+
         for element in fetch:
             if not isinstance(element, list):
                 change_two_dimensional_flag = True
@@ -90,15 +93,16 @@ class ResponseData:
 
         # 从响应体中取出被比较对象
 
-        compared_obj = jsonpath.jsonpath(rsp_data, jsonpath_regex)[0]  # TODO, 需要做一些判断, 如果查出来有两个则出UI长和定位信息
+        compared_obj = jsonpath.jsonpath(rsp_data, jsonpath_regex)[0]
         # 比较符的统一
         compare_type = self.get_unify_compare_symbol(compare_symbol)
 
         # 做实际比较
         cmp_res = self.compare_action(compared_obj, compare_type, target)
-        print("断言结果cmp_res", cmp_res)
-        # TODO 如果断言结果为假, 那么需要打印相关的信息, 日志
-        pass
+        logger.debug("单个断言::compared_obj::" + str(compared_obj))
+        logger.debug("单个断言::compare_type::" + str(compare_type))
+        logger.debug("单个断言::target::" + str(target))
+        logger.info("断言结果cmp_res::" + str(cmp_res))
 
     def check_all_expect(self, rsp_data, check):
 
@@ -141,14 +145,14 @@ class ResponseData:
             nonlocal pytest_check_cache
 
             if isinstance(check_data, tuple):
-                print("这里不能是元组")
+                logger.error("业务脚本层的主动断言传入的数据格式不能为元组, 期望为列表, 并且列表中有三个元素")
                 raise
             for key, value in check_data.items():
                 if isinstance(value, dict):  # 是一个字典
                     t_path = copy.deepcopy(path)
                     t_path.append(key)
                     if key not in real_rsp.keys():
-                        print("real_rsp_has_no_such_field")
+                        logger.error("真实响应中没有该字段, 请检查API默认断言的数据-real_rsp_has_no_such_field")
                         raise
                     traverse_json(value, real_rsp[key], t_path)
                 elif isinstance(value, list):  # 有可能这个就是根节点, 这个就是要比较的数据
@@ -159,7 +163,7 @@ class ResponseData:
                             t_path.append(key)
                             traverse_json(item, real_rsp[i], t_path)
                         else:
-                            print("列表里面只期望有字典, 其他场景是非法的, 或者需要进一步去封装处理")
+                            logger.error("列表里面只期望有字典, 其他场景是非法的, 或者需要进一步去封装处理")
                             raise
                     pass
                 else:  # 表示这就是普通的键值对了, 并且他的值value, 有坑你就是普通的字符串, 或有有可能是键值对来的
@@ -169,12 +173,12 @@ class ResponseData:
                     # expression_type = "string"
                     expression_type = judge_expression_type(value)
                     if expression_type == "string":
-                        print("根据api层预定义的单个check信息做断言")
-                        print("取值的表达式类型为string")
+                        logger.debug("取值的表达式类型为string")
                         check_type = "string"
                         except_obj = value
                         if key not in real_rsp.keys():
                             print("real_rsp_has_no_such_field")
+                            logger.error("real_rsp_has_no_such_field")
                             raise
                     elif expression_type == "regex":  # 这里为正则表达式的时候, 设计上, 需要使用这个正则表达式去请求体中去获得数据做为期望值
                         # 第一步, 使用jsonpath表达式去请求体中获得想响应的数据, 注意: req_json, data
@@ -207,29 +211,30 @@ class ResponseData:
         traverse_json(rsp_check, rsp_data, check)
 
         if rsp_data["code"] != 200 and check is not None:  # check是主动断言的入参, 响应失败并且由主动断言时, 不去做默认断言, 因为这个时候实际为用户在做异常接口测试
-            print("此步骤中业务脚本层check信息不为None,且响应状态码为失败, 不做API数据层的预定义断言")
+            logger.warning("此步骤中业务脚本层check信息不为None,且响应状态码为失败, 不做API数据层的预定义断言")
         else:  # 其他情况都要做断言
-            print("========  开始根据API数据层定义的rsp_check做自动断言  ========\n")
+            logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  API层的所有默认断言-开始\n")
             for check_obj in pytest_check_cache:
                 check_type = check_obj["check_type"]
                 except_obj = check_obj["except_obj"]
                 target_obj = check_obj["target_obj"]
                 path = check_obj["path"]
 
-                print("需要API默认断言的总数量为" + str(len(pytest_check_cache)))
-                print("====  开始对单个API层预定义的检查项做断言  ====")
+                logger.debug("需要API默认断言的总数量为" + str(len(pytest_check_cache)))
+                logger.info(">>>>>>>>>>>>>>>>  对单个API层预定义的检查项做断言-开始\n")
 
-                print("断言的类型为{}".format(check_type))
-                print("预定义期望的路径为{}".format(path))
+                logger.debug("断言的类型为{}".format(check_type))
+                logger.debug("预定义期望的路径为{}".format(path))
 
                 except_debug_str = "API数据层预定义的期望except_obj为{}, 数据类型为{}".format((except_obj),
                                                                                               str(type(except_obj)))
-                print(except_debug_str)
+                logger.debug(except_debug_str)
                 target_debug_str = "实际的响应信息的target_obj为{}, 数据类型为{}".format((target_obj),
                                                                                          str(type(target_obj)))
-                print(target_debug_str)
+                logger.debug(target_debug_str)
                 pytest_check_result = pytest_check.equal(except_obj, target_obj)
                 if not pytest_check_result:
-                    print("APi数据层预定义的断言结果为假  ==>  0  <== False ==> 假 <==")
-                print("====  结束对单个API层预定义的检查项做断言  ====\n")
-            print("========  结束根据API数据层定义的rsp_check做自动断言  ========\n")
+                    logger.error("APi数据层预定义的断言结果为假  ==>  0  <== False ==> 假 <==")
+                logger.info("<<<<<<<<<<<<<<<<  对单个API层预定义的检查项做断言-结束\n")
+            logger.info("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  API层的所有默认断言-结束\n")
+

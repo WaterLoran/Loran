@@ -47,7 +47,7 @@ class LoggerManager(metaclass=SingletonMeta):
 
         py_file_name = os.path.split(case_file_path)[1]
         py_file_name = py_file_name.strip(".py")
-        print("py_file_name", py_file_name)
+        # print("py_file_name", py_file_name)
 
         # 获取时间戳后缀,
         current = time.localtime()
@@ -69,7 +69,7 @@ class LoggerManager(metaclass=SingletonMeta):
             new_folder_list.append(cur_folder)
         new_folder_list = new_folder_list[::-1]   #  ["test_add_user", "user_management", "system_management", "api"]
 
-        print("new_folder_list", new_folder_list)
+        # print("new_folder_list", new_folder_list)
         t_folder = "cases"  # 用例文件的相对路径, 即根据用例的相对路径,去记录一些路径信息,将用于生存路径
         for i in range(1, len(new_folder_list)):
             t_folder = os.path.join(t_folder, new_folder_list[i])
@@ -87,7 +87,7 @@ class LoggerManager(metaclass=SingletonMeta):
         file = open(log_file_path, 'w')
         file.close()
 
-        print("最后获得的log_file_path:  ", log_file_path)
+        # print("最后获得的log_file_path:  ", log_file_path)
         return log_file_path
 
     def register(self, case_file_path, console=True, default_level=logging.DEBUG, **kwargs):

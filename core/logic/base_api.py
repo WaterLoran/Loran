@@ -1,7 +1,12 @@
+import json
 import yaml
 import requests
 import config
 from core.init import *
+from core.logger import LoggerManager
+
+
+logger = LoggerManager().get_logger("main")
 
 
 
@@ -24,13 +29,11 @@ class BaseApi:
 
     def read_env_yaml(self):
         env_file_path = os.path.join(CONFIG_PATH, "environment.yaml")
-        print("env_file_path", env_file_path)
         with open(env_file_path, 'r', encoding='utf-8') as f:
             env_res = yaml.load(f.read(), Loader=yaml.FullLoader)
-        print("env_res", env_res)
         return env_res
-        env_res = config.config_yaml
-        return env_res
+        # env_res = config.config_yaml
+        # return env_res
 
     def get_token(self):
         # 获取验证码的接口
@@ -51,21 +54,23 @@ class BaseApi:
         rsp_json = rsp.json()
         self.token = rsp_json["token"]
 
-        print("token", self.token)
+        logger.debug("token信息::" + self.token)
         pass
 
     def send(self, method, url="", **kwargs):
+        logger.info(">>>>>>>>>>>>>>>>  实际请求-开始\n")
+
         # 需要將token填充到header中， 然後再去請求
         self.get_token()  # 手动执行这个函数, 将token更新到实例变量中
         headers = {}
         headers.update({"Authorization": "Bearer " + self.token})
         if not url.startswith("/"):
             url = "/" + url
-            print("请给您的url加上/, 以满足格式要求")
+            logger.debug("请给您的url加上/, 以满足格式要求")
         rsp = requests.request(method, self.base_url + url, headers=headers, **kwargs)
         rsp_data = rsp.json()
-        print("url", url)
-        print("rsp_data", rsp_data)
+        logger.debug("真实响应体::" + json.dumps(rsp_data))
+        logger.info("<<<<<<<<<<<<<<<<  实际请求-结束\n")
         return rsp_data
 
 
