@@ -2,10 +2,11 @@ from core.init import *
 from .base_api import BaseApi
 from .request_data import RequeData
 from .response_data import ResponseData
-
+from core.logger import LoggerManager
 
 class Api:
     def __init__(self):
+        self.logger = LoggerManager().get_logger("main")
         pass
 
     def get_api_data(self, api_type, func, **kwargs):
@@ -29,6 +30,7 @@ class Api:
 
         if api_data is None:
             print("请确认是否已经编写return locals")  # TODO
+            self.logger.warning("请确认是否已经编写return locals")
             raise
             # raise RuoyiError("the_api_data_is_none")
 
@@ -88,7 +90,7 @@ class Api:
             req_method, req_url, files, data, rsp_check = Api().get_api_data("form_data", func, **kwargs)
             pass
 
-        print(f"\n\n\n开始处理新的请求, url为{req_url}")
+        self.logger.info(f"开始处理新的请求, url为{req_url}")
 
         print("开始做入参填充")
         # 将业务脚本层的入参填充到请求体中

@@ -1,11 +1,13 @@
 from common.ruoyi_logic import *
+from logger_fixture import logger_fixture
 
 
 class TestAddUser997:
     def setup_class(self):
         pass
 
-    def test_add_user_997(self):
+    # @logger_fixture()
+    def test_add_user_998(self):
         reg = register({
             "user_id": None,
             "user_id2": None,
@@ -13,14 +15,13 @@ class TestAddUser997:
         self.reg = reg
 
         # 添加用户
-        var_name = "hello"
-        var_nick_name = "操作成功"
+        var_name = "hello22"
         add_user(
-            userName=var_name, nickName=var_nick_name, password="hello123",
-            # check=[
-            #     ["$.msg", "eq", "操作成功"],
-            #     ["$.code", "==", 200],
-            # ]
+            userName=var_name, nickName=var_name, password=var_name,
+            check=[
+                ["$.msg", "eq", "操作成功"],
+                ["$.code", "==", 200],
+            ]
         )
 
         # 查看用户
