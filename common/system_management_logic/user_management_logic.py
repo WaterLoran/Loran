@@ -6,7 +6,7 @@ def add_user(userName="", nickName="", password=""):
     req_url = "/dev-api/system/user"
     req_method = "POST"
     req_json = {
-        "userName": "",  # $.userName
+        "userName": "",  # $..userName
         "nickName": "",
         "password": "",
         "status": "0",
@@ -32,7 +32,7 @@ def lst_user():
 
 
 @Api.json
-def rmv_user(userId):
+def rmv_user(userId=""):
     req_url = f"/dev-api/system/user/{userId}"
     req_method = "DELETE"
     req_json = {}

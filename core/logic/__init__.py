@@ -1,9 +1,10 @@
 import json
 from core.init import *
 from .base_api import BaseApi
-from .request_data import RequeData
+from .request_data import RequestData
 from .response_data import ResponseData
 from core.logger import LoggerManager
+from ..ruoyi_error import RuoyiError
 
 
 logger = LoggerManager().get_logger("main")
@@ -34,24 +35,21 @@ class Api:
         api_data = func(**kwargs)
 
         if api_data is None:
-            logger.warning(func.__name__ + "请确认是否已经编写return locals")
-            raise
-            # raise RuoyiError("the_api_data_is_none")
+            raise RuoyiError("get_api_data_failed", func=func.__name__)
 
         res_list = []
         for item in required_para:
             try:
                 res_list.append(api_data[item])
-            except Exception as err:
-                raise  # TODO
-                # raise RuoyiError("api_data_has_no_such_field", item=item)
+            except Exception as err:  # 期望必须传入的参数, 没有传, 比如url乜有编写
+                raise RuoyiError("no_necessary_parameters_were_passed_in", api_type=api_type, func=func, need_para=item)
+
 
         # 不要求的参数, 可能会出现
         for item in not_required_para:
             if item in api_data.keys():
                 res_list.append(api_data[item])
             else:
-                # logger.debug(func.__name__ + f" {item} 参数不在Api_data中")
                 res_list.append(None)
         logger.info("<<<<<<<<<<<<<<<  获取APi层数据 - 结束\n")
         return res_list
@@ -99,22 +97,20 @@ class Api:
             pass
 
 
-
         # 将业务脚本层的入参填充到请求体中
         if api_type == "json":
             if auto_fill is not False:  # 为False的时候, 不做填充
-                req_json = RequeData().modify_req_body(req_json, **kwargs)
+                req_json = RequestData().modify_req_body(req_json, **kwargs)
                 logger.info(func.__name__ + "步骤::json类型请求体::" + json.dumps(req_json))
         elif api_type == "urlencoded":
             if auto_fill is not False:  # 为False的时候, 不做填充
-                req_params = RequeData().modify_req_body(req_params, **kwargs)
+                req_params = RequestData().modify_req_body(req_params, **kwargs)
                 logger.info(func.__name__ + "urlencoded类型请求体::" + json.dumps(req_json))
         else:
             pass
 
 
         # 做实际请求
-
         logger.info(f"准备发送请求, url为{req_url}")
         if api_type == "json":  # json类型的请求
             rsp_data = BaseApi().send(method=req_method, url=req_url, json=req_json)

@@ -2,6 +2,7 @@ import copy
 import jsonpath
 import pytest_check
 from core.logger import LoggerManager
+from ..ruoyi_error import RuoyiError
 
 
 logger = LoggerManager().get_logger("main")
@@ -58,7 +59,7 @@ class ResponseData:
         for key, value in compare_dict.items():
             if symbol in value:
                 return key
-        raise  # TODO 都没有在里面, 需要抛出异常和定位信息
+        raise RuoyiError("the_comparator_is_not_defined", symbol=symbol, compare_dict=compare_dict)
 
     def compare_action(self, compared_obj, compare_type, target):
         if compare_type == "equal":

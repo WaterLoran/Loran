@@ -4,7 +4,7 @@ import requests
 import config
 from core.init import *
 from core.logger import LoggerManager
-
+from ..ruoyi_error import RuoyiError
 
 logger = LoggerManager().get_logger("main")
 
@@ -50,9 +50,12 @@ class BaseApi:
             "code": "888",
             "uuid": uuid
         }
-        rsp = requests.request("post", self.base_url + url, json=login_json)
-        rsp_json = rsp.json()
-        self.token = rsp_json["token"]
+        try:
+            rsp = requests.request("post", self.base_url + url, json=login_json)
+            rsp_json = rsp.json()
+            self.token = rsp_json["token"]
+        except:
+            raise RuoyiError("failed_to_obtain_token", username=self.username, password=self.password)
 
         logger.debug("token信息::" + self.token)
         pass
