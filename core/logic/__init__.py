@@ -3,7 +3,7 @@ from core.init import *
 from .base_api import BaseApi
 from .request_data import RequestData
 from .response_data import ResponseData
-from core.logger import LoggerManager
+from core.ruoyi_hook.logger import LoggerManager
 from ..ruoyi_error import RuoyiError
 
 

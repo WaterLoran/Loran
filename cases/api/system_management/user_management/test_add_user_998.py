@@ -1,12 +1,10 @@
 from common.ruoyi_logic import *
-from logger_fixture import logger_fixture
 
 
 class TestAddUser997:
     def setup_class(self):
         pass
 
-    # @logger_fixture()
     def test_add_user_998(self):
         reg = register({
             "user_id": None,
