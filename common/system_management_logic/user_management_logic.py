@@ -1,7 +1,9 @@
 from core.logic import Api
+import allure
 
 
 @Api.json
+@allure.step("添加用户-add_user")
 def add_user(userName="", nickName="", password=""):
     req_url = "/dev-api/system/user"
     req_method = "POST"
@@ -21,6 +23,7 @@ def add_user(userName="", nickName="", password=""):
 
 
 @Api.urlencoded
+@allure.step("查看用户")
 def lst_user():
     req_url = "/dev-api/system/user/list"
     req_method = "GET"
@@ -32,6 +35,7 @@ def lst_user():
 
 
 @Api.json
+@allure.step("删除用户")
 def rmv_user(userId=""):
     req_url = f"/dev-api/system/user/{userId}"
     req_method = "DELETE"
