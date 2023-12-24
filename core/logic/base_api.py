@@ -1,13 +1,42 @@
 import json
 import yaml
 import requests
+from easydict import EasyDict
 from core.init import *
 from core.ruoyi_hook.logger import LoggerManager
 from ..ruoyi_error import RuoyiError
+from config import *
+
 
 logger = LoggerManager().get_logger("main")
 
 
+# 单例模式
+class SingletonMeta(type):
+    """
+    https://refactoringguru.cn/design-patterns/singleton/python/example#example-0
+    """
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        """
+        Possible changes to the value of the `__init__` argument do not affect
+        the returned instance.
+        """
+        if cls not in cls._instances:
+            instance = super().__call__(*args, **kwargs)
+            cls._instances[cls] = instance
+        return cls._instances[cls]
+
+class Token(metaclass=SingletonMeta):
+    def __init__(self):
+        self.token = None
+
+    def read_token(self):
+        return self.token
+
+    def set_token(self, token):
+        self.token = token
 
 class BaseApi:
     def __init__(self):
@@ -17,24 +46,31 @@ class BaseApi:
         self.token = None
 
         self.env_info_init()
-        pass
 
     def env_info_init(self):
-        env_res = self.read_env_yaml()
-        self.base_url = env_res["env_ip"]
-        self.username = env_res["env_user"]
-        self.password = env_res["env_password"]
-        pass
 
-    def read_env_yaml(self):
-        env_file_path = os.path.join(CONFIG_PATH, "environment.yaml")
-        with open(env_file_path, 'r', encoding='utf-8') as f:
-            env_res = yaml.load(f.read(), Loader=yaml.FullLoader)
-        return env_res
-        # env_res = config.config_yaml
-        # return env_res
+        print("config.user.autotest.name", config.user.autotest.name)
+        print("config.user.autotest.password", config.user.autotest.password)
+
+        self.base_url = config.env_ip
+        self.username = config.env_user
+        self.password = config.env_password
 
     def get_token(self):
+        # 首先去指定地方尝试获取token,
+        my_token = Token()
+        global_token = my_token.read_token()
+        if global_token is None:
+            logger.debug("全局token实例中暂无token信息, 将去登录获取token")
+            # 如果没有的话, 就去做登录请求来更新
+            cur_token = self.login()
+            my_token.set_token(cur_token)
+            self.token = cur_token
+        else:
+            logger.debug("已从单例模式的token实例中获得token")
+            self.token = global_token
+
+    def login(self):
         # 获取验证码的接口
         url = "/dev-api/captchaImage"
         rsp = requests.request("get", self.base_url + url)
@@ -57,7 +93,7 @@ class BaseApi:
             raise RuoyiError("failed_to_obtain_token", username=self.username, password=self.password)
 
         logger.debug("token信息::" + self.token)
-        pass
+        return self.token
 
     def send(self, method, url="", **kwargs):
         logger.info(">>>>>>>>>>>>>>>>  实际请求-开始\n")
