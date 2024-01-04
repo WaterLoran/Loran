@@ -49,9 +49,6 @@ class BaseApi:
 
     def env_info_init(self):
 
-        print("config.user.autotest.name", config.user.autotest.name)
-        print("config.user.autotest.password", config.user.autotest.password)
-
         self.base_url = config.env_ip
         self.username = config.env_user
         self.password = config.env_password
@@ -70,7 +67,7 @@ class BaseApi:
             logger.debug("已从单例模式的token实例中获得token")
             self.token = global_token
 
-    def login(self):
+    def login(self, user="admin"):
         # 获取验证码的接口
         url = "/dev-api/captchaImage"
         rsp = requests.request("get", self.base_url + url)
@@ -79,6 +76,11 @@ class BaseApi:
 
         # login登录的接口
         url = "/dev-api/login"
+        if user != "admin":
+            self.username = config.user[user]["name"]
+            self.password = config.user[user]["password"]
+            print("login::self.username", self.username)
+            print("login::self.password", self.password)
         login_json = {
             "username": self.username,
             "password": self.password,
