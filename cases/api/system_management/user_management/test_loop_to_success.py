@@ -1,11 +1,11 @@
 from common.ruoyi_logic import *
 from core.event import Event
 
-class TestAddUser997:
-    def setup_class(self):
+class TestLoopToSuccess:
+    def setup(self):
         pass
 
-    def test_add_user_998(self):
+    def test_loop_to_success(self):
         reg = register({
             "user_id": None,
             "user_id2": None,
@@ -31,20 +31,32 @@ class TestAddUser997:
             check=[f"$.rows[?(@.userName=='{var_name}')].nickName", "eq", var_name]
         )
 
-        @Event.loop_to_success(30)
+        @Event.background(60)
+        def b_func():
+            return lst_user(
+                fetch=[
+                    [reg, "user_id", f"$.rows[?(@.userName=='{var_name}')].userId"],
+                    [reg, "user_id2", f"$.rows[?(@.userName=='{var_name}')].userId"],
+                ],
+                check=[f"$.rows[?(@.userName=='{var_name}')].nickName", "eq", var_name]
+            )
+        b_func()
+
+        # 验证这个函数的使用的时候, 需要上去环境将  hello22的用户的昵称改成MIKE
+        @Event.loop_to_success(3)
         def t_func():
             return lst_user(
                 fetch=[
                     [reg, "user_id", f"$.rows[?(@.userName=='{var_name}')].userId"],
                     [reg, "user_id2", f"$.rows[?(@.userName=='{var_name}')].userId"],
                 ],
-                check=[f"$.rows[?(@.userName=='{var_name}')].nickName", "eq", "MIKE"]
+                # check=[f"$.rows[?(@.userName=='{var_name}')].nickName", "eq", "MIKE"]
             )
-
         t_func()
 
 
 
+    def teardown(self):
         # 删除用户
         rmv_user(
             userId=self.reg.user_id,
@@ -53,7 +65,3 @@ class TestAddUser997:
                 ["$.code", "==", 200],
             ],
         )
-
-    def teardown_class(self):
-
-        pass

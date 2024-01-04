@@ -101,11 +101,11 @@ class Api:
         if api_type == "json":
             if auto_fill is not False:  # 为False的时候, 不做填充
                 req_json = RequestData().modify_req_body(req_json, **kwargs)
-                logger.info(func.__name__ + "步骤::json类型请求体::" + json.dumps(req_json))
+                logger.info(func.__name__ + "  步骤::json类型请求体::" + json.dumps(req_json))
         elif api_type == "urlencoded":
             if auto_fill is not False:  # 为False的时候, 不做填充
                 req_params = RequestData().modify_req_body(req_params, **kwargs)
-                logger.info(func.__name__ + "urlencoded类型请求体::" + json.dumps(req_json))
+                logger.info(func.__name__ + "  urlencoded类型请求体::" + json.dumps(req_json))
         else:
             pass
 
@@ -138,39 +138,51 @@ class Api:
             req_data = data
         else:  # 其他类型为空, 也就是其他场景下, 目前不会去结合请求体去做断言
             req_data = {}
-        ResponseData().check_api_default_expect(req_data, rsp_data, rsp_check, check)
-
-
+        default_check_res = ResponseData().check_api_default_expect(req_data, rsp_data, rsp_check, check)
 
         # 业务层的主动断言
         logger.info(">>>>>>>>>>>>>>>>  业务层的主动断言-开始\n")
-        ResponseData().check_all_expect(rsp_data, check)
+        service_check_res = ResponseData().check_all_expect(rsp_data, check)
         logger.info("<<<<<<<<<<<<<<<<  业务层的主动断言-结束\n")
         # 做提取信息操作
         ResponseData().fetch_all_value(rsp_data, fetch)
 
         logger.info("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  XX步骤-结束" + func.__name__ + "\n")
+
+        print("default_check_res", default_check_res)
+        print("service_check_res", service_check_res)
+        if default_check_res and service_check_res:  # 只有业务层的主动断言和APi数据层的默认断言都是成功的, 才会认为这个步骤是执行成功的
+            print("default_check_res 和 service_check_res 都是True")
+            return True
+        else:
+            return False
+
+
+
     @classmethod
     def json(self, func):
         def wrapper(**kwargs):
             """我是wrapper的注释"""
-            Api().abstract_api("json", func, **kwargs)
-
+            step_check_res = Api().abstract_api("json", func, **kwargs)
+            print("step_check_res", step_check_res)
+            return step_check_res
         return wrapper
 
     @classmethod
     def urlencoded(self, func):
         def wrapper(**kwargs):
             """我是wrapper的注释"""
-            Api().abstract_api("urlencoded", func, **kwargs)
-
+            step_check_res = Api().abstract_api("urlencoded", func, **kwargs)
+            print("step_check_res", step_check_res)
+            return step_check_res
         return wrapper
 
     @classmethod
     def form_data(self, func):
         def wrapper(**kwargs):
             """我是wrapper的注释"""
-            Api().abstract_api("form_data", func, **kwargs)
-
+            step_check_res = Api().abstract_api("form_data", func, **kwargs)
+            print("step_check_res", step_check_res)
+            return step_check_res
         return wrapper
 

@@ -104,11 +104,12 @@ class ResponseData:
         logger.debug("单个断言::compare_type::" + str(compare_type))
         logger.debug("单个断言::target::" + str(target))
         logger.info("断言结果cmp_res::" + str(cmp_res))
+        return cmp_res
 
     def check_all_expect(self, rsp_data, check):
 
         if check is None:
-            return
+            return True
 
         # 判断check传进来的参数是不是二维列表, 并处理
         change_two_dimensional_flag = False
@@ -120,16 +121,20 @@ class ResponseData:
             check = [check]
 
         # 依次对各个断言进行操作
+        service_check_res = True
         for each_check in check:
-            self._check_one_expect(rsp_data, each_check)
-        pass
+            one_check_res = self._check_one_expect(rsp_data, each_check)
+            if one_check_res is False:
+                service_check_res = False
+        return service_check_res
+
 
     def check_api_default_expect(self, req_data, rsp_data, rsp_check, check):
         # 将rsp_check 转换成  类似于  check = [Var_a, "==", "target_value"]
         # 递归rsp_check, 获得信息
         # 然后再拿这个表达式去做断言
         if not rsp_check:
-            return
+            return True
 
         def judge_expression_type(expression):
             expression_type = "string"
@@ -211,6 +216,7 @@ class ResponseData:
         # 请求失败, 主动断言无, 默认断言无
         traverse_json(rsp_check, rsp_data, check)
 
+        default_check_res = True
         if rsp_data["code"] != 200 and check is not None:  # check是主动断言的入参, 响应失败并且由主动断言时, 不去做默认断言, 因为这个时候实际为用户在做异常接口测试
             logger.warning("此步骤中业务脚本层check信息不为None,且响应状态码为失败, 不做API数据层的预定义断言")
         else:  # 其他情况都要做断言
@@ -235,7 +241,8 @@ class ResponseData:
                 logger.debug(target_debug_str)
                 pytest_check_result = pytest_check.equal(except_obj, target_obj)
                 if not pytest_check_result:
+                    default_check_res = False
                     logger.error("APi数据层预定义的断言结果为假  ==>  0  <== False ==> 假 <==")
                 logger.info("<<<<<<<<<<<<<<<<  对单个API层预定义的检查项做断言-结束\n")
             logger.info("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  API层的所有默认断言-结束\n")
-
+            return default_check_res
