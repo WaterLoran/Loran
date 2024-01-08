@@ -1,8 +1,8 @@
-# from core.page import Page
+from core.page import Page
 from selenium.webdriver.common.by import By
 
 
-# @Page.base
+@Page.base
 def main_page(**kwargs):
     page = {
         "title": "",
