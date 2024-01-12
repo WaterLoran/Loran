@@ -1,6 +1,7 @@
 import json
 import functools
 import jsonpath
+import pytest_check
 from core.page.ui_init import *
 from core.ruoyi_hook.logger import LoggerManager
 from ..ruoyi_error import RuoyiError
@@ -18,6 +19,8 @@ class Page:
             action_data_type = "string"
         elif isinstance(element_value, dict):
             action_data_type = "dict"
+        elif isinstance(element_value, list):
+            action_data_type = "list"
         else:
             raise
         logger.debug("入参的类型是" + action_data_type)
@@ -53,10 +56,104 @@ class Page:
                     "loca_expression": loca_expression,
                     "action": action
                 })
-            else:  # 这种场景下, 就是要去给输入框输入一些文字信息了
-                # TODO
+            else:  # 在输入的value 为字符串的情况下, 不是点击(click)的话, 那就只能说明这个字符串是要输入的信息了, 并且对应的组件的默认操作一定是输入
+                default_action = tartget_obj["default_action"] # 有且仅仅能够为type
+                action = default_action
+                input_content = input_value
+                action_info.update({
+                    "by": by,
+                    "loca_expression": loca_expression,
+                    "action": action,
+                    "input_content": input_content
+                })
                 pass
+        elif action_data_type == "dict":
+            #             user_node_delete_button={
+            #                 "var_user_name": var_user_name,
+            #                 "action": "click"
+            #             }
+            input_key = page_node_input[0]  # input_key 就是 user_node_delete_button
+            jsonpath_regex = f"$..{input_key}"  # 获取目标信息的jsonpath表达式
+            try:
+                tartget_obj = jsonpath.jsonpath(page_data, jsonpath_regex)[0]  # 找出在page中的目标数据
+            except:
+                # raise RuoyiError("ui_can_not_find_node_in_page_properties", input_key=input_key)
+                raise # TODO 封装异常
 
+            location = tartget_obj["location"]                             # 找出定位方法
+            by = location[0]
+            loca_expression = location[1]
+
+            input_dict = page_node_input[1]
+            # input_dict 就是 {
+            #                 "var_user_name": var_user_name,
+            #                 "action": "click"
+            #           }
+            if "action" not in input_dict.keys():
+                raise
+
+            action = input_dict["action"]
+
+            for key, value in input_dict.items():  # 对那些出关键字之外的信息, 做相关填充, 和替换
+                if key not in ["action", "check", "fetch"]:  # 这里的设计是将那些 除 关键字之外的信息, 都填充到location中去
+                    loca_expression = loca_expression.replace(key, value)
+
+            action_info.update({                                            # 更新定位方法, 定位信息, 和操作行为
+                "by": by,
+                "loca_expression": loca_expression,
+                "action": action
+            })
+
+        elif action_data_type == "list":
+            #             last_user_name=["text", "eq", "loran888"]
+            input_key = page_node_input[0]  # input_key 就是 user_node_delete_button
+            jsonpath_regex = f"$..{input_key}"  # 获取目标信息的jsonpath表达式
+            try:
+                tartget_obj = jsonpath.jsonpath(page_data, jsonpath_regex)[0]  # 找出在page中的目标数据
+            except:
+                # raise RuoyiError("ui_can_not_find_node_in_page_properties", input_key=input_key)
+                raise  # TODO 封装异常
+
+            location = tartget_obj["location"]                             # 找出定位方法
+            by = location[0]
+            loca_expression = location[1]
+
+            input_list = page_node_input[1]
+            # input_list 就是 ["text", "eq", "loran888"],  如果是断言可见性的话["visible", True],
+
+            action = "CHECK"
+            attribute = input_list[0]
+            if attribute.upper() == "TEXT":
+                compare_type = input_list[1]
+                target = input_list[2]
+                action_info.update({                                            # 更新定位方法, 定位信息, 和操作行为
+                    "by": by,
+                    "loca_expression": loca_expression,
+                    "action": action,
+                    "attribute": attribute,
+                    "compare_type": compare_type,
+                    "target": target  # 期望的结果
+                })
+            elif attribute.upper() == "VISIBLE":
+                state = input_list[1]
+                action_info.update({                                            # 更新定位方法, 定位信息, 和操作行为
+                    "by": by,
+                    "loca_expression": loca_expression,
+                    "action": action,
+                    "attribute": attribute,
+                    "state": state,
+                })
+            elif attribute.upper() in ["CLICKABLE", "ENABLED"]:
+                state = input_list[1]
+                action_info.update({                                            # 更新定位方法, 定位信息, 和操作行为
+                    "by": by,
+                    "loca_expression": loca_expression,
+                    "action": action,
+                    "attribute": attribute,
+                    "state": state,
+                })
+
+        logger.debug(f"根据{str(page_node_input)}提取到的操作信息为" + json.dumps(action_info, indent=2, ensure_ascii=False))
         return action_info
 
     def action(self, **kwargs):
@@ -95,6 +192,95 @@ class Page:
             logger.info(f"将以{by}方式以 {loca_expression} 值去元素查找, 然后移动鼠标到这个位置")
 
             sb.hover(by, loca_expression)
+
+        elif action.upper() in ["CHECK"]:
+            logger.info(f"将以{by}方式以 {loca_expression} 值去元素查找, 然后找到文本, 再去做一个文本断言")
+
+            attribute = kwargs["attribute"]  # 获取断言的, 关键属性, 可选的有  TEXT  VISIBLE
+
+            if attribute.upper() == "TEXT":
+                compare_type = kwargs["compare_type"]
+                target = kwargs["target"]
+                compare_type = Page().get_unify_compare_symbol(compare_type)
+                if compare_type == "equal":
+                    sb.assert_text_visible(target, loca_expression, by=by)
+                elif compare_type == "not_equal":
+                    sb.assert_text_not_visible(target, loca_expression, by=by)
+            elif attribute.upper() == "VISIBLE":
+                state = kwargs["state"]
+                if state is True:  # 为True的情况
+                    sb.assert_element_visible(loca_expression, by=by)
+                elif state is False:
+                    sb.assert_element_not_visible(loca_expression, by=by)  # 表示断言不可见
+                else:
+                    raise
+            elif attribute.upper() in ["CLICKABLE", "ENABLED"]:
+                state = kwargs["state"]
+                clickable_state = sb.is_element_clickable(loca_expression, by=by)
+                print("clickable_state", clickable_state)
+                print("state", state)
+                if state is True:  # 为True的情况
+                    pytest_check.assert_equal(clickable_state, True)
+                elif state is False:
+                    pytest_check.assert_equal(clickable_state, False)
+                else:
+                    raise
+            elif attribute.upper() == "PRESENT":
+                state = kwargs["state"]
+                if state is True:  # 为True的情况
+                    sb.assert_element_present(loca_expression, by=by)
+                elif state is False:
+                    sb.assert_element_not_present(loca_expression, by=by)  # 表示断言不可见
+                else:
+                    raise
+
+
+
+
+    def get_unify_compare_symbol(self, symbol):
+        compare_dict = {
+            "equal": ["==", "eq", "equal"],
+            "not_equal": ["!=", "not_equal", "not_eq"],
+            # "greater": [">", "lg", "larger", "greater"],
+            # "less": ["<", "smaller", "less"],
+            # "greater_equal": [">=", "greater_equal"],
+            # "less_equal": ["<=", "less_equal"],
+            # "in": ["in"],
+            # "not_in": ["not_in"],
+            # "include": ["include"],
+            # "not_include": ["not_include"],
+        }
+        for key, value in compare_dict.items():
+            if symbol in value:
+                return key
+        raise RuoyiError("the_comparator_is_not_defined", symbol=symbol, compare_dict=compare_dict)
+
+    def compare_action(self, compared_obj, compare_type, target):
+        if compare_type == "equal":
+            pytest_check_result = pytest_check.equal(compared_obj, target)
+        elif compare_type == "not_equal":
+            pytest_check_result = pytest_check.not_equal(compared_obj, target)
+        elif compare_type == "greater":
+            pytest_check_result = pytest_check.greater(compared_obj, target)
+        elif compare_type == "greater_equal":
+            pytest_check_result = pytest_check.greater_equal(compared_obj, target)
+        elif compare_type == "less":
+            pytest_check_result = pytest_check.less(compared_obj, target)
+        elif compare_type == "less_equal":
+            pytest_check_result = pytest_check.less_equal(compared_obj, target)
+        elif compare_type == "in":
+            pytest_check_result = pytest_check.is_in(compared_obj, target)
+        elif compare_type == "not_in":
+            pytest_check_result = pytest_check.is_not_in(compared_obj, target)
+        elif compare_type == "include":
+            pytest_check_result = pytest_check.is_in(target, compared_obj)
+        elif compare_type == "not_include":
+            pytest_check_result = pytest_check.is_not_in(target, compared_obj)
+        else:
+            raise
+
+        return pytest_check_result
+
 
     def do_all_web_operation(self, page_data, operation_list):
         for page_node_input in operation_list:

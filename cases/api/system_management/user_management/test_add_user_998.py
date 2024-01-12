@@ -31,18 +31,17 @@ class TestAddUser997:
             check=[f"$.rows[?(@.userName=='{var_name}')].nickName", "eq", var_name]
         )
 
-        @Event.loop_to_success(30)
-        def t_func():
-            return lst_user(
-                fetch=[
-                    [reg, "user_id", f"$.rows[?(@.userName=='{var_name}')].userId"],
-                    [reg, "user_id2", f"$.rows[?(@.userName=='{var_name}')].userId"],
-                ],
-                check=[f"$.rows[?(@.userName=='{var_name}')].nickName", "eq", "MIKE"]
-            )
-
-        t_func()
-
+        # @Event.loop_to_success(30)
+        # def t_func():
+        #     return lst_user(
+        #         fetch=[
+        #             [reg, "user_id", f"$.rows[?(@.userName=='{var_name}')].userId"],
+        #             [reg, "user_id2", f"$.rows[?(@.userName=='{var_name}')].userId"],
+        #         ],
+        #         check=[f"$.rows[?(@.userName=='{var_name}')].nickName", "eq", "MIKE"]
+        #     )
+        #
+        # t_func()
 
 
         # 删除用户

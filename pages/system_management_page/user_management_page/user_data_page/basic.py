@@ -1,8 +1,8 @@
-# from core.page import Page
+from core.page import Page
 from selenium.webdriver.common.by import By
 
 
-# @Page.base
+@Page.base
 def user_data_page(**kwargs):
     page = {
         "title": "",
@@ -46,6 +46,18 @@ def user_data_page(**kwargs):
                 "default_action": "click",
             },
             ## 某一条数据
+            "last_user_user_name": {
+                "description": "用户数据页面的最后一行即最后一个用户的用户名称",
+                "location": [By.XPATH, "//table[@class='el-table__body']/tbody/tr[last()]/td[3]"],
+            },
+            "last_user_nick_name": {
+                "description": "用户数据页面的最后一行即最后一个用户的用户昵称",
+                "location": [By.XPATH, "//table[@class='el-table__body']/tbody/tr[last()]/td[4]"],
+            },
+            "last_user_edit_button": {
+                "description": "用户数据页面的最后一行即最后一个用户的编辑按钮",
+                "location": [By.XPATH, "//table[@class='el-table__body']/tbody/tr[last()]/td[9]/div/button[1]"],
+            },
             "user_name_button": {
                 "description": "用户名称-按钮",
                 "type": "button",

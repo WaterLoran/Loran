@@ -149,10 +149,7 @@ class Api:
 
         logger.info("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  XX步骤-结束" + func.__name__ + "\n")
 
-        print("default_check_res", default_check_res)
-        print("service_check_res", service_check_res)
         if default_check_res and service_check_res:  # 只有业务层的主动断言和APi数据层的默认断言都是成功的, 才会认为这个步骤是执行成功的
-            print("default_check_res 和 service_check_res 都是True")
             return True
         else:
             return False
@@ -164,7 +161,6 @@ class Api:
         def wrapper(**kwargs):
             """我是wrapper的注释"""
             step_check_res = Api().abstract_api("json", func, **kwargs)
-            print("step_check_res", step_check_res)
             return step_check_res
         return wrapper
 
