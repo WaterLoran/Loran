@@ -26,135 +26,186 @@ class Page:
         logger.debug("入参的类型是" + action_data_type)
         return action_data_type
 
-    def extract_action_info(self, page_node_input, page_data):
-        action_info = {}  # 最终提取出来的操作信息
-        action_data_type = Page().judge_action_data_type(page_node_input)
-        if action_data_type == "string":
-            # 判断page_node_input的值是 click(关键字) 还是其他字符串(这种场景其实就是要往输入框中输入信息)
-            input_key = page_node_input[0]
-            input_value = page_node_input[1]
-            logger.debug(f"操作的页面节点为 {input_key} , 操作行为或者输入的值为 {input_value}")
+    def extract_one_check_info(self, page_data, page_node_input):
+        action_info = {}
+        #             last_user_name=["text", "eq", "loran888"]
+        input_key = page_node_input[0]  # input_key 就是 user_node_delete_button
+        jsonpath_regex = f"$..{input_key}"  # 获取目标信息的jsonpath表达式
+        print("jsonpath_regex", jsonpath_regex)
+        try:
+            tartget_obj = jsonpath.jsonpath(page_data, jsonpath_regex)[0]  # 找出在page中的目标数据
+        except:
+            # raise RuoyiError("ui_can_not_find_node_in_page_properties", input_key=input_key)
+            raise  # TODO 封装异常
 
-            #  去page数据中找到这个节点的相关数据
-            jsonpath_regex = f"$..{input_key}"
-            try:
-                tartget_obj = jsonpath.jsonpath(page_data, jsonpath_regex)[0] # TODO 这里补鞥呢正常执行, 即到page中找不到相关数据, 需要抛出异常 raise
-            except:
-                # raise RuoyiError("ui_can_not_find_node_in_page_properties", input_key=input_key)
-                raise
+        location = tartget_obj["location"]  # 找出定位方法
+        by = location[0]
+        loca_expression = location[1]
 
-            location = tartget_obj["location"]  #TODO 需要针对这里的场景做一个前作的location_info的提取, 并且追加到loaction_info中
-            by = location[0]
-            loca_expression = location[1]
-            logger.debug("在page_data中提取到的的node信息为 \n" + json.dumps(tartget_obj, indent=2, ensure_ascii=False))
+        input_list = page_node_input[1]
+        # input_list 就是 ["text", "eq", "loran888"],  如果是断言可见性的话["visible", True],
 
-            # 针对传入的键值对的值, 的信息, 来解析出说要操作的信息
-            if input_value.upper() == "CLICK":
-                action = "click"
-                action_info.update({
-                    "by": by,
-                    "loca_expression": loca_expression,
-                    "action": action
-                })
-            else:  # 在输入的value 为字符串的情况下, 不是点击(click)的话, 那就只能说明这个字符串是要输入的信息了, 并且对应的组件的默认操作一定是输入
-                default_action = tartget_obj["default_action"] # 有且仅仅能够为type
-                action = default_action
-                input_content = input_value
-                action_info.update({
-                    "by": by,
-                    "loca_expression": loca_expression,
-                    "action": action,
-                    "input_content": input_content
-                })
-                pass
-        elif action_data_type == "dict":
-            #             user_node_delete_button={
-            #                 "var_user_name": var_user_name,
-            #                 "action": "click"
-            #             }
-            input_key = page_node_input[0]  # input_key 就是 user_node_delete_button
-            jsonpath_regex = f"$..{input_key}"  # 获取目标信息的jsonpath表达式
-            try:
-                tartget_obj = jsonpath.jsonpath(page_data, jsonpath_regex)[0]  # 找出在page中的目标数据
-            except:
-                # raise RuoyiError("ui_can_not_find_node_in_page_properties", input_key=input_key)
-                raise # TODO 封装异常
+        action = "CHECK"
+        attribute = input_list[0]
+        if attribute.upper() == "TEXT":
+            compare_type = input_list[1]
+            target = input_list[2]
+            action_info.update({  # 更新定位方法, 定位信息, 和操作行为
+                "by": by,
+                "loca_expression": loca_expression,
+                "action": action,
+                "attribute": attribute,
+                "compare_type": compare_type,
+                "target": target  # 期望的结果
+            })
+        elif attribute.upper() == "VISIBLE":
+            state = input_list[1]
+            action_info.update({  # 更新定位方法, 定位信息, 和操作行为
+                "by": by,
+                "loca_expression": loca_expression,
+                "action": action,
+                "attribute": attribute,
+                "state": state,
+            })
+        elif attribute.upper() in ["CLICKABLE", "ENABLED"]:
+            state = input_list[1]
+            action_info.update({  # 更新定位方法, 定位信息, 和操作行为
+                "by": by,
+                "loca_expression": loca_expression,
+                "action": action,
+                "attribute": attribute,
+                "state": state,
+            })
+        return action_info
 
-            location = tartget_obj["location"]                             # 找出定位方法
-            by = location[0]
-            loca_expression = location[1]
+    def organize_into_two_dimensional_check(self, page_node_input):
+        # page_node_input[0] = last_user_user_name
+        # page_node_input[1] = [["text", "eq", var_user_name],["visible", True]],
+        # 最后的输出应该为   [
+        #     ["last_user_user_name", ["text", "eq", "var_user_name"]]
+        #     ["last_user_user_name", ["visible", True]]
+        # ]
+        check_info_type = "two"
+        for item in page_node_input[1]:
+            if not isinstance(item, list):  #只要某一个元素的类型不是列表, 那么传入的就是一维列表
+                check_info_type = "one"
 
-            input_dict = page_node_input[1]
-            # input_dict 就是 {
-            #                 "var_user_name": var_user_name,
-            #                 "action": "click"
-            #           }
-            if "action" not in input_dict.keys():
-                raise
+        if check_info_type == "one":  # 只有一个断言信息的时候
+            page_node_input_list = [page_node_input]
 
-            action = input_dict["action"]
+        elif check_info_type == "two":  # 有两个断言信息的时候
+            page_node_input_list = []
+            for one_check in page_node_input[1]:
+                t_page_node_input = [page_node_input[0], one_check]
+                page_node_input_list.append(t_page_node_input)
+            print("page_node_input_list", page_node_input_list)
+        return page_node_input_list
 
-            for key, value in input_dict.items():  # 对那些出关键字之外的信息, 做相关填充, 和替换
-                if key not in ["action", "check", "fetch"]:  # 这里的设计是将那些 除 关键字之外的信息, 都填充到location中去
-                    loca_expression = loca_expression.replace(key, value)
+    def extract_one_operation_info(self, page_data, page_node_input):
+        action_info = {}
+        action_info_list = []
+        input_key = page_node_input[0]
+        input_value = page_node_input[1]
+        logger.debug(f"操作的页面节点为 {input_key} , 操作行为或者输入的值为 {input_value}")
 
-            action_info.update({                                            # 更新定位方法, 定位信息, 和操作行为
+        #  去page数据中找到这个节点的相关数据
+        jsonpath_regex = f"$..{input_key}"
+        try:
+            tartget_obj = jsonpath.jsonpath(page_data, jsonpath_regex)[
+                0]  # TODO 这里补鞥呢正常执行, 即到page中找不到相关数据, 需要抛出异常 raise
+        except:
+            # raise RuoyiError("ui_can_not_find_node_in_page_properties", input_key=input_key)
+            raise
+
+        location = tartget_obj["location"]  # TODO 需要针对这里的场景做一个前作的location_info的提取, 并且追加到loaction_info中
+        by = location[0]
+        loca_expression = location[1]
+        logger.debug("在page_data中提取到的的node信息为 \n" + json.dumps(tartget_obj, indent=2, ensure_ascii=False))
+
+        # 针对传入的键值对的值, 的信息, 来解析出说要操作的信息
+        if input_value.upper() == "CLICK":
+            action = "click"
+            action_info.update({
                 "by": by,
                 "loca_expression": loca_expression,
                 "action": action
             })
+        else:  # 在输入的value 为字符串的情况下, 不是点击(click)的话, 那就只能说明这个字符串是要输入的信息了, 并且对应的组件的默认操作一定是输入
+            default_action = tartget_obj["default_action"]  # 有且仅仅能够为type
+            action = default_action
+            input_content = input_value
+            action_info.update({
+                "by": by,
+                "loca_expression": loca_expression,
+                "action": action,
+                "input_content": input_content
+            })
+        action_info_list.append(action_info)
+        return action_info_list
+    def extract_one_operation_info_with_para(self, page_data, page_node_input):
+        action_info = {}
+        action_info_list = []
+        #             user_node_delete_button={
+        #                 "var_user_name": var_user_name,
+        #                 "action": "click"
+        #             }
+        input_key = page_node_input[0]  # input_key 就是 user_node_delete_button
+        jsonpath_regex = f"$..{input_key}"  # 获取目标信息的jsonpath表达式
+        try:
+            tartget_obj = jsonpath.jsonpath(page_data, jsonpath_regex)[0]  # 找出在page中的目标数据
+        except:
+            # raise RuoyiError("ui_can_not_find_node_in_page_properties", input_key=input_key)
+            raise  # TODO 封装异常
 
-        elif action_data_type == "list":
-            #             last_user_name=["text", "eq", "loran888"]
-            input_key = page_node_input[0]  # input_key 就是 user_node_delete_button
-            jsonpath_regex = f"$..{input_key}"  # 获取目标信息的jsonpath表达式
-            try:
-                tartget_obj = jsonpath.jsonpath(page_data, jsonpath_regex)[0]  # 找出在page中的目标数据
-            except:
-                # raise RuoyiError("ui_can_not_find_node_in_page_properties", input_key=input_key)
-                raise  # TODO 封装异常
+        location = tartget_obj["location"]  # 找出定位方法
+        by = location[0]
+        loca_expression = location[1]
 
-            location = tartget_obj["location"]                             # 找出定位方法
-            by = location[0]
-            loca_expression = location[1]
+        input_dict = page_node_input[1]
+        # input_dict 就是 {
+        #                 "var_user_name": var_user_name,
+        #                 "action": "click"
+        #           }
+        if "action" not in input_dict.keys():
+            raise
 
-            input_list = page_node_input[1]
-            # input_list 就是 ["text", "eq", "loran888"],  如果是断言可见性的话["visible", True],
+        action = input_dict["action"]
 
-            action = "CHECK"
-            attribute = input_list[0]
-            if attribute.upper() == "TEXT":
-                compare_type = input_list[1]
-                target = input_list[2]
-                action_info.update({                                            # 更新定位方法, 定位信息, 和操作行为
-                    "by": by,
-                    "loca_expression": loca_expression,
-                    "action": action,
-                    "attribute": attribute,
-                    "compare_type": compare_type,
-                    "target": target  # 期望的结果
-                })
-            elif attribute.upper() == "VISIBLE":
-                state = input_list[1]
-                action_info.update({                                            # 更新定位方法, 定位信息, 和操作行为
-                    "by": by,
-                    "loca_expression": loca_expression,
-                    "action": action,
-                    "attribute": attribute,
-                    "state": state,
-                })
-            elif attribute.upper() in ["CLICKABLE", "ENABLED"]:
-                state = input_list[1]
-                action_info.update({                                            # 更新定位方法, 定位信息, 和操作行为
-                    "by": by,
-                    "loca_expression": loca_expression,
-                    "action": action,
-                    "attribute": attribute,
-                    "state": state,
-                })
+        for key, value in input_dict.items():  # 对那些出关键字之外的信息, 做相关填充, 和替换
+            if key not in ["action", "check", "fetch"]:  # 这里的设计是将那些 除 关键字之外的信息, 都填充到location中去
+                loca_expression = loca_expression.replace(key, value)
+
+        action_info.update({  # 更新定位方法, 定位信息, 和操作行为
+            "by": by,
+            "loca_expression": loca_expression,
+            "action": action
+        })
+        action_info_list.append(action_info)
+        return action_info_list
+
+    def extract_action_info(self, page_node_input, page_data):
+        action_info = {}  # 最终提取出来的操作信息
+        action_info_list = []
+        action_data_type = Page().judge_action_data_type(page_node_input)
+        if action_data_type == "string":
+            # 判断page_node_input的值是 click(关键字) 还是其他字符串(这种场景其实就是要往输入框中输入信息)
+            action_info_list = Page().extract_one_operation_info(page_data, page_node_input)
+            print("action_info_list", action_info_list)
+
+        elif action_data_type == "dict":
+            action_info_list = Page().extract_one_operation_info_with_para(page_data, page_node_input)
+
+        elif action_data_type == "list":  # 表示要做多个断言
+            # 先判断是二维列表, 还是一维列表, 然后统一层二维列表
+            # 然后依次对二维列表中的, 断言信息进行信息提取
+            # 最终返回, 字典列表, 也就是一个列表里面, 有多个字典, 每个字典就是一个操作信息
+            check_list = Page().organize_into_two_dimensional_check(page_node_input)
+            for page_node_input in check_list:
+                action_info = Page().extract_one_check_info(page_data, page_node_input)
+                action_info_list.append(action_info)
 
         logger.debug(f"根据{str(page_node_input)}提取到的操作信息为" + json.dumps(action_info, indent=2, ensure_ascii=False))
-        return action_info
+        return action_info_list
 
     def action(self, **kwargs):
         """
@@ -235,8 +286,6 @@ class Page:
                     raise
 
 
-
-
     def get_unify_compare_symbol(self, symbol):
         compare_dict = {
             "equal": ["==", "eq", "equal"],
@@ -284,8 +333,9 @@ class Page:
 
     def do_all_web_operation(self, page_data, operation_list):
         for page_node_input in operation_list:
-            action_info = Page().extract_action_info(page_node_input, page_data)
-            Page().action(**action_info)
+            action_info_list = Page().extract_action_info(page_node_input, page_data)
+            for action_info in action_info_list:
+                Page().action(**action_info)
         pass
 
     def get_operation_list(self, **kwargs):
