@@ -115,7 +115,7 @@ class Api:
         if api_type == "json":  # json类型的请求
             rsp_data = BaseApi().send(method=req_method, url=req_url, json=req_json)
         elif api_type == "urlencoded":  # urlencode类型的请求
-            rsp_data = BaseApi().send(method=req_method, url=req_url, params=req_params)
+            rsp_data = BaseApi().send(method=req_method, url=req_url, params=req_params, json=req_json)
         elif api_type == "form_data":  # form_data类型的请求
             logger.debug(f"form_data类型请求, files参数::files")
 
