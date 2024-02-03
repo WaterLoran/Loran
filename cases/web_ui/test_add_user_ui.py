@@ -3,6 +3,9 @@ from pages import *
 
 class TestAddUserUi(RuoYiUicase):
 
+    def setUp(self, masterqa_mode=False):
+        super().setUp()
+
     def test_add_user_ui(self):
         ui_init(self)
 
@@ -37,6 +40,9 @@ class TestAddUserUi(RuoYiUicase):
             confirm_button="click"
         )
 
+    def tearDown(self):
+        super().tearDown()
+        pass
 
 
 
