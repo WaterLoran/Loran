@@ -1,8 +1,10 @@
+# coding=utf8
 from common.ruoyi_logic import *
 from core.event import Event
 
-class TestAddUser997:
-    def setup_class(self):
+
+class TestAddUser998:
+    def setup(self):
         pass
 
     def test_add_user_998(self):
@@ -44,6 +46,9 @@ class TestAddUser997:
         # t_func()
 
 
+
+
+    def teardown(self):
         # 删除用户
         rmv_user(
             userId=self.reg.user_id,
@@ -52,7 +57,5 @@ class TestAddUser997:
                 ["$.code", "==", 200],
             ],
         )
-
-    def teardown_class(self):
 
         pass
