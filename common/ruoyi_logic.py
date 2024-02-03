@@ -1,3 +1,5 @@
+import allure
+
 # 做一些基本的初始化
 from easydict import EasyDict as register
 
