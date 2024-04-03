@@ -26,6 +26,8 @@
 
    e. pycharm工程配置pytest
 
+   f. 使用pip install -r requirements.txt 来安装需要的第三方包(待提供)
+
    
 
 4. # 使用的技术方案及第三方库
