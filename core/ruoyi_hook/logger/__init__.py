@@ -46,7 +46,7 @@ class LoggerManager(metaclass=SingletonMeta):
         # 获取文件名, 比如  test_add_user
 
         py_file_name = os.path.split(case_file_path)[1]
-        py_file_name = py_file_name.strip(".py")
+        py_file_name = py_file_name.rsplit(".py")[0]  # 为处理特殊情况不使用strip(), 使用strip时, "test_preapp.py"  会出问题
         # print("py_file_name", py_file_name)
 
         # 获取时间戳后缀,
