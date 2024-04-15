@@ -6,7 +6,6 @@ from .response_data import ResponseData
 from core.ruoyi_hook.logger import LoggerManager
 from ..ruoyi_error import RuoyiError
 
-
 logger = LoggerManager().get_logger("main")
 
 class Api:
@@ -28,7 +27,7 @@ class Api:
             # Api类型: 必须要有的
             "json": [["req_method", "req_url", "req_json"], ["rsp_check", "auto_fill", "teardown"]],
             "urlencoded": [["req_method", "req_url", "req_params"], ["req_json", "rsp_check", "autofill", "teardown"]],
-            "form_data": [["req_method", "req_url"], ["files", "data", "rsp_check"]],
+            "form_data": [["req_method", "req_url"], ["files", "data", "req_params", "rsp_check"]],
         }
         required_para = api_type_field[api_type][0]
         not_required_para = api_type_field[api_type][1]
@@ -43,7 +42,6 @@ class Api:
                 res_list.append(api_data[item])
             except Exception as err:  # 期望必须传入的参数, 没有传, 比如url乜有编写
                 raise RuoyiError("no_necessary_parameters_were_passed_in", api_type=api_type, func=func, need_para=item)
-
 
         # 不要求的参数, 可能会出现
         for item in not_required_para:
@@ -78,7 +76,8 @@ class Api:
         :param kwargs:
         :return:
         """
-        logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  测试步骤 - 开始" + func.__name__ + "\n")
+        logger.info(
+            ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  测试步骤 - 开始" + func.__name__ + "\n")
 
         # 将fetch从kwargs中提取出来
         fetch, kwargs = Api._get_fetch(**kwargs)
@@ -91,11 +90,12 @@ class Api:
         if api_type == "json":
             req_method, req_url, req_json, rsp_check, auto_fill, teardown = Api().get_api_data("json", func, **kwargs)
         elif api_type == "urlencoded":
-            req_method, req_url, req_params, req_json, rsp_check, auto_fill, teardown = Api().get_api_data("urlencoded", func, **kwargs)
+            req_method, req_url, req_params, req_json, rsp_check, auto_fill, teardown = Api().get_api_data("urlencoded",
+                                                                                                           func,
+                                                                                                           **kwargs)
         elif api_type == "form_data":
-            req_method, req_url, files, data, rsp_check = Api().get_api_data("form_data", func, **kwargs)
+            req_method, req_url, files, data, req_params, rsp_check = Api().get_api_data("form_data", func, **kwargs)
             pass
-
 
         # 将业务脚本层的入参填充到请求体中
         if api_type == "json":
@@ -106,9 +106,11 @@ class Api:
             if auto_fill is not False:  # 为False的时候, 不做填充
                 req_params = RequestData().modify_req_body(req_params, **kwargs)
                 logger.info(func.__name__ + "  urlencoded类型请求体::" + json.dumps(req_json))
+        elif api_type == "form_data":
+            logger.debug("当前是form_data请求, 不做入参填充, 因为不存在入参填充的场景")
         else:
-            pass
-
+            logger.debug(f"API的数据类型是{api_type}")
+            raise
 
         # 做实际请求
         logger.info(f"准备发送请求, url为{req_url}")
@@ -121,15 +123,33 @@ class Api:
 
             if files is not None:
                 # 拼接出绝对路径
-                abs_file_path = os.path.join(FILES_PATH, files)
-                logger.debug(f"form_data类型请求, 上传文件的绝对路径::{abs_file_path}")
-                file_obj = open(abs_file_path, 'rb')
-                files_dict = {'avatarfile': file_obj}  # 将文件放入一个字典中，字典的键是'file'
+                if isinstance(files, str):
+                    logger.error("这个软件系统上传文件场景, form_data中的那个文件名不统一, 暂时不支持这种使用方法, 即files='XX.png'")
+                    raise
+                if isinstance(files, dict):
+                    for form_key_name, file_name in files.items():
+                        abs_file_path = os.path.join(FILES_PATH, file_name)
+                        logger.debug(f"form_data类型请求, 上传文件的绝对路径::{abs_file_path}")
+                        file_obj = open(abs_file_path, 'rb')
+                        files_dict = {form_key_name: file_obj}  # 将文件放入一个字典中，字典的键是'file'
             else:
-                files_dict = {}   # 默认没有的时候
-            rsp_data = BaseApi().send(method=req_method, url=req_url, files=files_dict, data=data)
-
-
+                files_dict = {}  # 默认没有的时候
+            req_body_dict = {
+                "method": req_method,
+                "url": req_url,
+            }
+            if files != {}:
+                req_body_dict.update({
+                    "files": files_dict
+                })
+            if data is not None:
+                req_body_dict.update({
+                    "data": data
+                })
+            if req_params is not None:
+                req_body_dict.update({"params": req_params})
+            print("req_body_dict", req_body_dict)
+            rsp_data = BaseApi().send(**req_body_dict)
 
         # API数据层的默认断言
         if api_type == "json":  # json类型的请求:
