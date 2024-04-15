@@ -7,7 +7,7 @@ import allure
 def mod_profile_picture(picture="猞猁.png"):
     req_url = "/dev-api/system/user/profile/avatar"
     req_method = "POST"
-    files = picture
+    files = {"avatarfile": picture}
     data = {}
     rsp_check = {
         "msg": "操作成功",
