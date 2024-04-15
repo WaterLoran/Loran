@@ -34,3 +34,7 @@ setup(
         ]
     },
 )
+
+
+#  打包命令: python setup.py sdist bdist_wheel
+# 然后将文件覆盖到D:\EprosTest\venv\Scripts目录下, 然后执行pip安装
