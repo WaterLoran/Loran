@@ -76,8 +76,7 @@ class Api:
         :param kwargs:
         :return:
         """
-        logger.info(
-            ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  测试步骤 - 开始" + func.__name__ + "\n")
+        logger.info(f"================  开始 测试步骤 {func.__name__} 测试步骤  ================")
 
         # 将fetch从kwargs中提取出来
         fetch, kwargs = Api._get_fetch(**kwargs)
@@ -167,12 +166,13 @@ class Api:
         # 做提取信息操作
         ResponseData().fetch_all_value(rsp_data, fetch)
 
-        logger.info("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  XX步骤-结束" + func.__name__ + "\n")
+        logger.info(f"================  结束 测试步骤 {func.__name__} 测试步骤  ================")
 
         if default_check_res and service_check_res:  # 只有业务层的主动断言和APi数据层的默认断言都是成功的, 才会认为这个步骤是执行成功的
             return True
         else:
             return False
+
 
 
 
