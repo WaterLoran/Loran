@@ -112,14 +112,12 @@ class Api:
             raise
 
         # 做实际请求
-        logger.info(f"准备发送请求, url为{req_url}")
+        logger.info(f"========  开始 {func.__name__} 步骤的请求  ========")
         if api_type == "json":  # json类型的请求
             rsp_data = BaseApi().send(method=req_method, url=req_url, json=req_json)
         elif api_type == "urlencoded":  # urlencode类型的请求
             rsp_data = BaseApi().send(method=req_method, url=req_url, params=req_params, json=req_json)
         elif api_type == "form_data":  # form_data类型的请求
-            logger.debug(f"form_data类型请求, files参数::files")
-
             if files is not None:
                 # 拼接出绝对路径
                 if isinstance(files, str):
@@ -147,10 +145,11 @@ class Api:
                 })
             if req_params is not None:
                 req_body_dict.update({"params": req_params})
-            print("req_body_dict", req_body_dict)
             rsp_data = BaseApi().send(**req_body_dict)
+        logger.info(f"========  结束 {func.__name__} 步骤的请求  ========")
 
         # API数据层的默认断言
+        logger.info(f"========  开始 {func.__name__} 步骤的 API层默认断言  ========")
         if api_type == "json":  # json类型的请求:
             req_data = req_json
         elif api_type == "form_data":
@@ -158,13 +157,17 @@ class Api:
         else:  # 其他类型为空, 也就是其他场景下, 目前不会去结合请求体去做断言
             req_data = {}
         default_check_res = ResponseData().check_api_default_expect(req_data, rsp_data, rsp_check, check)
+        logger.info(f"========  结束 {func.__name__} 步骤的 API层默认断言  ========")
 
         # 业务层的主动断言
-        logger.info(">>>>>>>>>>>>>>>>  业务层的主动断言-开始\n")
+        logger.info(f"========  开始 {func.__name__} 步骤的 业务层主动断言  ========")
         service_check_res = ResponseData().check_all_expect(rsp_data, check)
-        logger.info("<<<<<<<<<<<<<<<<  业务层的主动断言-结束\n")
+        logger.info(f"========  结束 {func.__name__} 步骤的 业务层主动断言  ========")
+
         # 做提取信息操作
+        logger.info(f"========  开始 {func.__name__}步骤的 信息提取  ========")
         ResponseData().fetch_all_value(rsp_data, fetch)
+        logger.info(f"========  结束 {func.__name__}步骤的 信息提取  ========")
 
         logger.info(f"================  结束 测试步骤 {func.__name__} 测试步骤  ================")
 
