@@ -114,7 +114,7 @@ class BaseApi:
             rsp_data = rsp.json()
             logger.info("真实响应体::" + json.dumps(rsp_data, indent=2, ensure_ascii=False))
         except:
-            rsp_res = rsp.__dict__
+            rsp_data = rsp.__dict__
             logger.info(f"{url}接口的响应(非常规响应而是可能会带有二进制文件的)::rsp_dict: \n  " + str(rsp_res))
         logger.info("<<<<<<<<<<<<<<<<  实际请求-结束\n")
         return rsp_data
