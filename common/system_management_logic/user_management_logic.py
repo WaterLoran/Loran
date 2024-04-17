@@ -8,12 +8,17 @@ def add_user(userName="", nickName="", password=""):
     req_url = "/dev-api/system/user"
     req_method = "POST"
     req_json = {
-        "userName": "",  # $..userName
-        "nickName": "",
-        "password": "",
-        "status": "0",
-        "postIds": [],
-        "roleIds": []
+        "deptId": None,  # 部门ID
+        "userName": "",  # 用户名称
+        "nickName": "",  # 用户昵称
+        "password": "",  # 密码
+        "phonenumber": "",  # 电话号码
+        "email": "",
+        "sex": "",  # 性别 0表示男, 1表示女
+        "status": "0",  # 状态, 0表示启用, 1表示停用
+        "remark": "",  # 备注
+        "postIds": [],  # 岗位ID
+        "roleIds": []  # 角色
     }
     rsp_check = {
         "msg": "操作成功",
@@ -50,11 +55,10 @@ def mod_user_by_upload(file_name="", updateSupport=0):
     req_url = "/dev-api/system/user/importData"
     req_method = "POST"
     req_params = {
-        "updateSupport": updateSupport  #  0表示不覆盖, True表示覆盖
+        "updateSupport": updateSupport  # 0表示不覆盖, True表示覆盖
     }
     files = {"file": file_name}
     rsp_check = {
         "code": 200
     }
     return locals()
-

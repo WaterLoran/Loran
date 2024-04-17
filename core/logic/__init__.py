@@ -380,9 +380,7 @@ class Api:
 
         # 业务层的主动断言
         self.do_service_check()
-
         logger.info(f"================  结束 测试步骤 {func.__name__} 测试步骤  ================")
-
         return self.get_step_check_res()
 
 
