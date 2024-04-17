@@ -220,7 +220,6 @@ class ResponseData:
         if rsp_data["code"] != 200 and check is not None:  # check是主动断言的入参, 响应失败并且由主动断言时, 不去做默认断言, 因为这个时候实际为用户在做异常接口测试
             logger.warning("此步骤中业务脚本层check信息不为None,且响应状态码为失败, 不做API数据层的预定义断言")
         else:  # 其他情况都要做断言
-            logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  API层的所有默认断言-开始\n")
             for check_obj in pytest_check_cache:
                 check_type = check_obj["check_type"]
                 except_obj = check_obj["except_obj"]
@@ -244,5 +243,4 @@ class ResponseData:
                     default_check_res = False
                     logger.error("APi数据层预定义的断言结果为假  ==>  0  <== False ==> 假 <==")
                 logger.info("<<<<<<<<<<<<<<<<  对单个API层预定义的检查项做断言-结束\n")
-            logger.info("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  API层的所有默认断言-结束\n")
             return default_check_res

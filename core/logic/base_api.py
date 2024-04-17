@@ -107,11 +107,31 @@ class BaseApi:
         if not url.startswith("/"):
             url = "/" + url
             logger.debug("请给您的url加上/, 以满足格式要求")
+
+        self.log_req_info_before_request(url=url, method=method, **kwargs)
         rsp = requests.request(method, self.base_url + url, headers=headers, **kwargs)
-        rsp_data = rsp.json()
-        logger.debug("真实响应体::" + json.dumps(rsp_data))
+        try:
+            rsp_data = rsp.json()
+            logger.info("真实响应体::" + json.dumps(rsp_data, indent=2, ensure_ascii=False))
+        except:
+            rsp_data = rsp.__dict__
+            logger.info(f"{url}接口的响应(非常规响应而是可能会带有二进制文件的)::rsp_dict: \n  " + str(rsp_res))
         logger.info("<<<<<<<<<<<<<<<<  实际请求-结束\n")
         return rsp_data
+
+    def log_req_info_before_request(self, **kwargs):
+        req_url = kwargs["url"]
+
+        req_json_list = ["json", "form_data", "params", "data", "req_json"]
+        for body in req_json_list:
+            if body in kwargs.keys():
+                body_value = kwargs[body]
+                if isinstance(body_value, dict):
+                    logger.info(f"{req_url}接口的请求体{body}为:: " + json.dumps(body_value, indent=2, ensure_ascii=False))
+                else:
+                    logger.info(f"{req_url}接口的请求体{body}为:: \n  " + str(body_value))
+                    # TODO 需要针对列表类型, 使用pprint来打印
+        logger.debug("")
 
 
 if __name__ == '__main__':

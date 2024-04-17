@@ -42,3 +42,19 @@ def rmv_user(userId=""):
     req_json = {}
     auto_fill = False
     return locals()
+
+
+@Api.form_data
+@allure.step("通过导入文件来增加用户")
+def mod_user_by_upload(file_name="", updateSupport=0):
+    req_url = "/dev-api/system/user/importData"
+    req_method = "POST"
+    req_params = {
+        "updateSupport": updateSupport  #  0表示不覆盖, True表示覆盖
+    }
+    files = {"file": file_name}
+    rsp_check = {
+        "code": 200
+    }
+    return locals()
+
