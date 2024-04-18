@@ -97,6 +97,12 @@ class BaseApi:
         logger.debug("token信息::" + self.token)
         return self.token
 
+    def update_token(self, user="admin"):
+        my_token = Token()
+        cur_token = self.login(user=user)
+        my_token.set_token(cur_token)
+        pass
+
     def send(self, method, url="", **kwargs):
         logger.info(">>>>>>>>>>>>>>>>  实际请求-开始\n")
 

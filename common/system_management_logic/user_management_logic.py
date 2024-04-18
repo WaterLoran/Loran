@@ -15,7 +15,7 @@ def add_user(userName="", nickName="", password=""):
         "phonenumber": "",  # 电话号码
         "email": "",
         "sex": "",  # 性别 0表示男, 1表示女
-        "status": "0",  # 状态, 0表示启用, 1表示停用
+        "status": "",  # 状态, 0表示启用, 1表示停用
         "remark": "",  # 备注
         "postIds": [],  # 岗位ID
         "roleIds": []  # 角色
