@@ -97,7 +97,9 @@ class BaseApi:
         logger.debug("token信息::" + self.token)
         return self.token
 
-    def update_token(self, user="admin"):
+    def update_token(self, user=""):
+        if user == "":
+            raise
         my_token = Token()
         cur_token = self.login(user=user)
         my_token.set_token(cur_token)
