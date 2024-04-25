@@ -53,6 +53,7 @@
    c. 找到setup.py阅读, 并编译Python包, 拷贝到虚拟环境中去安装
 
    d. B站搜索 罗兰水, 并找到安装若依管理系统的视频, 并安装
+       视频地址: https://www.bilibili.com/video/BV1394y1E7Ak/?vd_source=dfda50881c9c583b748c882e99f0fa21
 
    e. pycharm工程配置pytest
 
