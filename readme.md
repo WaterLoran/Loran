@@ -59,6 +59,7 @@
 
    f. 使用pip install -r requirements.txt 来安装需要的第三方包(待提供)
 
+   g.上Bilibili搜索 罗兰水 找到 "RuoyiTest测试框架上手视频", 视频地址: https://www.bilibili.com/video/BV1ZJ4m1E77S/?vd_source=dfda50881c9c583b748c882e99f0fa21
    
 
 4. # 使用的技术方案及第三方库

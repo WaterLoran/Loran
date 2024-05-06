@@ -310,7 +310,7 @@ class Api:
         fetch = step_context.fetch
 
         logger.info(f"========  开始 {func.__name__} 步骤的 业务层主动断言  ========")
-        print("step_context.__dict__", step_context.__dict__)
+        # print("step_context.__dict__", step_context.__dict__)
         service_check_res = ResponseData().check_all_expect(rsp_data, check)
         logger.info(f"========  结束 {func.__name__} 步骤的 业务层主动断言  ========")
 
