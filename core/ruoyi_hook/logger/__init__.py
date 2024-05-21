@@ -164,3 +164,8 @@ def logger_end():
     logger_mgt = LoggerManager()
     logger_mgt.unregister()
 
+def get_logger():
+    logger_mgt = LoggerManager()
+    logger = logger_mgt.get_logger("main")
+    return logger
+
