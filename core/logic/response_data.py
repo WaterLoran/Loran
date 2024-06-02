@@ -111,7 +111,15 @@ class ResponseData:
 
         else:  # 平常的值对象的比较, 即大小包含这些
             # 从响应体中取出被比较对象
-            compared_obj = jsonpath.jsonpath(rsp_data, jsonpath_regex)[0]
+
+            fetch_res = jsonpath.jsonpath(rsp_data, jsonpath_regex)
+            if not fetch_res:
+                logger.error(f"使用该jsonpath表达式不能从响应体中取得对应数据, 对应jsonpath表达式为{jsonpath_regex}")
+                logger.error("被断言的响应体信息为  " + json.dumps(rsp_data, indent=2, ensure_ascii=False))
+                raise
+            else:
+                compared_obj = fetch_res[0]
+                # compared_obj = jsonpath.jsonpath(rsp_data, jsonpath_regex)[0]
             # 比较符的统一
             compare_type = self.get_unify_compare_symbol(compare_symbol)
 
