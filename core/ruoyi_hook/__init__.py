@@ -1,6 +1,8 @@
 import os
+import json
+from core.context import ServiceContext
 from .logger import logger_init, logger_end
-from core.init import CONFIG_PATH
+from common.ruoyi_logic import *
 
 """
 打包方法：
@@ -15,18 +17,8 @@ pip install wheel
 case_file_path_dict = {}
 logger = None
 
-def get_run_case_id_list():
-    run_case_id_path = os.path.join(CONFIG_PATH, "run_case_id.txt")
-    with open(run_case_id_path, 'r') as file:
-        content = file.read()
-
-    t_case_id_list = content.strip("\n").strip(",").split(',')
-    if t_case_id_list == ['']:
-        t_case_id_list = []
-    case_id_list = [item.strip() for item in t_case_id_list]
-    return case_id_list
-
 def pytest_collection_modifyitems(items):
+    # print("items", items)
     """
     测试用例收集完成时，将收集到的item的name和nodeid的中文显示在控制台上
     :return:
@@ -34,21 +26,7 @@ def pytest_collection_modifyitems(items):
     for item in items:
         item.name = item.name.encode("utf-8").decode("unicode_escape")
         item._nodeid = item.nodeid.encode("utf-8").decode("unicode_escape")
-
-    # ============================= 使用用例ID对收集到的用例进行筛选 (主要用于连跑后的失败脚本重跑)
-    case_id_list = get_run_case_id_list()
-    if case_id_list == []:  # 如果筛选的为空, 即不做任何的筛选
-        pass
-    else:
-        to_rmv_item_index = []
-        for i in range(len(items)):
-            item = items[i]
-            item_id = item.name[5:]  # item名去掉 test_ 即为用例ID
-            if item_id not in case_id_list:
-                to_rmv_item_index.append(i)
-        for index in to_rmv_item_index[::-1]:
-            del items[index]
-    # ============================= 使用用例ID对收集到的用例进行筛选 (主要用于连跑后的失败脚本重跑)
+    pass
 
 def pytest_collect_file(file_path, path, parent):
     print("file_path, path, parent", file_path, path, parent)
@@ -76,6 +54,44 @@ def pytest_runtest_logstart(nodeid, location):
     logger = logger_init(abs_file_path)
     pass
 
+def pytest_runtest_teardown(item, nextitem):
+    """
+    后置步骤: 打印相关日志
+    """
+    global logger
+    logger.info("pytest_runtest_teardown")
+
+    # ==========================================================   读取脚本上下文中的restore_list, 来做恢复操作
+    service_context = ServiceContext()
+    restore_list = service_context.restore_list
+
+    restore_list.reverse()
+    for restore in restore_list:
+        if not restore:  # 如果是空的, 及时抛出异常问题, 让框架维护人去维护
+            logger.error("restore_list不应该出现{}这种情况, 请及时定位排查")
+            raise
+        restore: dict
+        # 取出 cur_restore_flag, 并从字典中去删除
+        cur_restore_flag = restore["cur_restore_flag"]
+        del restore["cur_restore_flag"]
+
+        # 根据恢复的标记位 去恢复操作
+        if cur_restore_flag:
+            func_name, para_info = restore.popitem()
+            if func_name in globals() and callable(globals()[func_name]):
+                # 入参可能有多个, 需要遍历处理
+                call_para = {}
+                for para_name, para_value in para_info.items():
+                    call_para.update({para_name: para_value})
+                func = globals()[func_name]
+                func(**call_para)
+
+    # 更新运行时链条
+    # 注意: teardown的后置过程中, 先执行的钩子函数, 在执行的业务脚本层编写的函数调用
+    service_context.runtime_chain.append("script_end")
+    logger.debug("service_context.runtime_chain 信息为:: " +
+                 json.dumps(service_context.runtime_chain, indent=2, ensure_ascii=False))
+    # ==========================================================   读取脚本上下文中的restore_list, 来做恢复操作
 
 def pytest_runtest_logfinish(nodeid, location):
     print("pytest_runtest_logfinish", nodeid, location)
