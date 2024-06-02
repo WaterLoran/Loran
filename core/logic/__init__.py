@@ -7,6 +7,8 @@ from .request_data import RequestData
 from .response_data import ResponseData
 from core.ruoyi_hook.logger import LoggerManager
 from ..ruoyi_error import RuoyiError
+from .complex_api import ComplexApi
+
 
 logger = LoggerManager().get_logger("main")
 
