@@ -1,6 +1,6 @@
 import os
 from .logger import logger_init, logger_end
-from config.path import CONFIG_PATH
+from core.init import CONFIG_PATH
 
 """
 打包方法：
