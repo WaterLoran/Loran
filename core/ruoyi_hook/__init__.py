@@ -1,5 +1,6 @@
 import os
 from .logger import logger_init, logger_end
+from config.path import CONFIG_PATH
 
 """
 打包方法：
@@ -14,8 +15,18 @@ pip install wheel
 case_file_path_dict = {}
 logger = None
 
+def get_run_case_id_list():
+    run_case_id_path = os.path.join(CONFIG_PATH, "run_case_id.txt")
+    with open(run_case_id_path, 'r') as file:
+        content = file.read()
+
+    t_case_id_list = content.strip("\n").strip(",").split(',')
+    if t_case_id_list == ['']:
+        t_case_id_list = []
+    case_id_list = [item.strip() for item in t_case_id_list]
+    return case_id_list
+
 def pytest_collection_modifyitems(items):
-    # print("items", items)
     """
     测试用例收集完成时，将收集到的item的name和nodeid的中文显示在控制台上
     :return:
@@ -23,7 +34,21 @@ def pytest_collection_modifyitems(items):
     for item in items:
         item.name = item.name.encode("utf-8").decode("unicode_escape")
         item._nodeid = item.nodeid.encode("utf-8").decode("unicode_escape")
-    pass
+
+    # ============================= 使用用例ID对收集到的用例进行筛选 (主要用于连跑后的失败脚本重跑)
+    case_id_list = get_run_case_id_list()
+    if case_id_list == []:  # 如果筛选的为空, 即不做任何的筛选
+        pass
+    else:
+        to_rmv_item_index = []
+        for i in range(len(items)):
+            item = items[i]
+            item_id = item.name[5:]  # item名去掉 test_ 即为用例ID
+            if item_id not in case_id_list:
+                to_rmv_item_index.append(i)
+        for index in to_rmv_item_index[::-1]:
+            del items[index]
+    # ============================= 使用用例ID对收集到的用例进行筛选 (主要用于连跑后的失败脚本重跑)
 
 def pytest_collect_file(file_path, path, parent):
     print("file_path, path, parent", file_path, path, parent)
