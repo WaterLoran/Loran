@@ -1,4 +1,5 @@
 import copy
+import json
 import jsonpath
 import pytest_check
 from core.ruoyi_hook.logger import LoggerManager
@@ -92,19 +93,35 @@ class ResponseData:
         compare_symbol = each_check[1]
         target = each_check[2]
 
-        # 从响应体中取出被比较对象
+        if compare_symbol == "exist":  # 如果是为了某个jsonpath表达式在响应中是否存在
+            fetch_res = jsonpath.jsonpath(rsp_data, jsonpath_regex)  # 能提取到这位 [[XX], ...] 一个二维列表, 否则为False
+            if target is False:
+                pytest_check_res = pytest_check.is_false(fetch_res)
+            elif target is True:
+                pytest_check_res = pytest_check.is_true(fetch_res)
+            else:
+                logger.error(f"当断言类型为 exist时候, 期望的值只能为True或者False, 而您输入的为{target}")
+                raise
 
-        compared_obj = jsonpath.jsonpath(rsp_data, jsonpath_regex)[0]
-        # 比较符的统一
-        compare_type = self.get_unify_compare_symbol(compare_symbol)
+            if not pytest_check_res:
+                logger.error(f"期望使用 {jsonpath_regex} 表达式 去响应中 断言其对应存在性为 {target} , 但实际为 {pytest_check_res}")
+                logger.error("被断言的响应体信息为  " + json.dumps(rsp_data, indent=2, ensure_ascii=False))
+            else:
+                logger.debug(f"期望使用 {jsonpath_regex} 表达式 去响应中 断言其对应存在性为 {target} , 期望和实际一致, 成功")
 
-        # 做实际比较
-        cmp_res = self.compare_action(compared_obj, compare_type, target)
-        logger.debug("单个断言::compared_obj::" + str(compared_obj))
-        logger.debug("单个断言::compare_type::" + str(compare_type))
-        logger.debug("单个断言::target::" + str(target))
-        logger.info("断言结果cmp_res::" + str(cmp_res))
-        return cmp_res
+        else:  # 平常的值对象的比较, 即大小包含这些
+            # 从响应体中取出被比较对象
+            compared_obj = jsonpath.jsonpath(rsp_data, jsonpath_regex)[0]
+            # 比较符的统一
+            compare_type = self.get_unify_compare_symbol(compare_symbol)
+
+            # 做实际比较
+            cmp_res = self.compare_action(compared_obj, compare_type, target)
+            logger.debug("单个断言::compared_obj::" + str(compared_obj))
+            logger.debug("单个断言::compare_type::" + str(compare_type))
+            logger.debug("单个断言::target::" + str(target))
+            logger.info("断言结果cmp_res::" + str(cmp_res))
+            return cmp_res
 
     def check_all_expect(self, rsp_data, check):
 

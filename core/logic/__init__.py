@@ -307,17 +307,10 @@ class Api:
         func = step_context.func
         rsp_data = step_context.rsp_data
         check = step_context.check
-        fetch = step_context.fetch
 
         logger.info(f"========  开始 {func.__name__} 步骤的 业务层主动断言  ========")
-        # print("step_context.__dict__", step_context.__dict__)
         service_check_res = ResponseData().check_all_expect(rsp_data, check)
         logger.info(f"========  结束 {func.__name__} 步骤的 业务层主动断言  ========")
-
-        # 做提取信息操作
-        logger.info(f"========  开始 {func.__name__}步骤的 信息提取  ========")
-        ResponseData().fetch_all_value(rsp_data, fetch)
-        logger.info(f"========  结束 {func.__name__}步骤的 信息提取  ========")
 
         step_context.service_check_res = service_check_res
         pass
@@ -401,7 +394,6 @@ class Api:
         def wrapper(**kwargs):
             """我是wrapper的注释"""
             step_check_res = Api().abstract_api("urlencoded", func, **kwargs)
-            print("step_check_res", step_check_res)
             return step_check_res
 
         return wrapper
@@ -411,7 +403,6 @@ class Api:
         def wrapper(**kwargs):
             """我是wrapper的注释"""
             step_check_res = Api().abstract_api("form_data", func, **kwargs)
-            print("step_check_res", step_check_res)
             return step_check_res
 
         return wrapper
