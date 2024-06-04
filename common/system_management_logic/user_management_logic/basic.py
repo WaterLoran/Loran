@@ -64,4 +64,19 @@ def mod_user_by_upload(file_name="", updateSupport=0):
     return locals()
 
 
-
+@Api.urlencoded
+@allure.step("查看用户-附带restore")
+def lst_user_wtih_restore(userName="", **kwargs):
+    req_url = "/dev-api/system/user/list"
+    req_method = "GET"
+    req_params = {
+        "pageNum": 1,
+        "pageSize": 10
+    }
+    restore = {
+        "rmv_user": {
+            "userId": f"$.rows[?(@.userName=='{userName}')].userId"
+        }
+    }
+    auto_fill = False
+    return locals()

@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 setup(
     name='ruoyi_hook',
     url='https://github.com/xxx/ruoyi_hook',
-    version='1.0',
+    version='1.1.1',
     author="water",
     author_email='1696746432@qq.com',
     description='UTF-8',
