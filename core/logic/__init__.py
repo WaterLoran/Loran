@@ -1,6 +1,8 @@
 import copy
 import json
+import time
 from core.init import *
+import pytest_check
 from config import *
 from .base_api import BaseApi
 from .request_data import RequestData
@@ -180,6 +182,75 @@ class Api:
             logger.debug(f"业务脚本层的 恢复标志位 为 restore {restore}")
 
         step_context.cur_restore_flag = restore
+
+    def do_retry_logic(self):
+        service_context = ServiceContext()
+        step_context = StepContext()
+
+        remain_retry = service_context.remain_retry
+        wrapper_func = service_context.wrapper
+        kwargs = step_context.func_kwargs
+
+        if "retry" in kwargs:
+            del kwargs["retry"]
+
+        # 循环执行该函数, 并根据结果判断是否继续执行
+        retry_count = 0
+        while remain_retry > 0:
+            remain_retry -= 1
+            retry_count += 1
+            logger.debug(f">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 正在尝试第{retry_count}次")
+
+            step_assert_res = wrapper_func(**kwargs)  # 调用函数本身, 但是已经移除retry参数
+
+            if not step_assert_res:  # 成功是结果为成功
+                logger.warning(f"第 {retry_count} 次的 尝试执行logic结果为 失败")
+            else:  # 重试的结果为成功
+                logger.info(f"第 {retry_count} 次的 尝试执行logic结果为 成功")
+                # 如果重试成功的话, 则恢复相关的错误堆栈信息 到 这个logic之前, 即从 service_context 中取出这个数据, 并更新
+                pytest_check.check_log._num_failures = service_context.stack_pytest_check_num_failures
+                pytest_check.check_log._failures = service_context.stack_pytest_check_failures
+
+                # 更新 这个步骤的断言结果, 即这个logic的执行结果,
+                # fetch如果有问题, 会直接抛出异常,而不是暂时记录结果, 所以retry功能对fetch不能使用, TODO, 这里考虑如何开发维护框架
+                # 实际脚本的写法中, 可通过多次retry去check 成功某个logic之后, 再去fetch, 就能保证可靠性, 就可以规避这个问题
+                step_context.step_check_res = True
+                step_context.service_check_res = True
+                step_context.api_check_res = True
+                break  # 跳出这个循环
+
+            time.sleep(1)  # 每次重试之间间隔一秒
+
+        return self.get_step_check_res()
+
+
+    def get_retry_and_do_retry(self):
+        step_context = StepContext()
+        service_context = ServiceContext()
+        t_kwargs = step_context.unprocessed_kwargs
+        func_name = step_context.func.__name__
+
+        has_retry = False
+        retry = 0  # 默认是不重新尝试的
+        if "retry" in t_kwargs.keys():
+            has_retry = True
+            logger.debug(f"将要对 {func_name} 函数尝试执行 {retry} 次, 直到成功")
+            retry = t_kwargs["retry"]
+            if not isinstance(retry, int):
+                logger.error("retry参数表示对该logic最多尝试的次数, 仅允许int类型")
+                raise
+            del t_kwargs["retry"]
+
+            # 如果传入了retry, 才去记录pytest_check 所记录的 断言信息 stack
+            service_context.stack_pytest_check_num_failures = copy.deepcopy(
+                pytest_check.check_log._num_failures)  # 记录原始的失败次数
+            service_context.stack_pytest_check_failures = copy.deepcopy(pytest_check.check_log._failures)  # 记录原始的错误msg
+
+        service_context.remain_retry = retry  # 每次的logic调用, 都会获取并更新这个变量
+
+        # 如果有has_retry, 则执行do_retry_logic
+        if has_retry:
+            return self.do_retry_logic()
 
     def get_api_data(self):
         step_context = StepContext()
@@ -435,7 +506,17 @@ class Api:
 
         pass
 
-    def abstract_api(self, api_type, func, **kwargs):
+    def init_step(self, api_type, func, wrapper, **kwargs):
+        # 重置上下文, 并将当前关键字函数的函数名, 请求类型, 请求参数都更新到上下文中去
+        step_context = StepContext()
+        step_context.reset_all_context()
+        step_context.init_step(api_type, func, **kwargs)  # 将当前测试步骤的信息初始化到步骤上下文中
+
+        # 在业务上下文中 更新运行时链条
+        service_context = ServiceContext()
+        service_context.wrapper = wrapper
+
+    def abstract_api(self, api_type, func, wrapper, **kwargs):
         """
         抽象API, 即描述各个API的操作前后的所有行为, 包括, APi数据获取, 入参填充, 实际请求, 断言, 提取在响应信息, 日志等
         :param api_type:
@@ -443,13 +524,15 @@ class Api:
         :param kwargs:
         :return:
         """
+        # 重置测试步骤的所有上下文信息 并初始化
+        self.init_step(api_type, func, wrapper, **kwargs)
+
+        # 获取 retry 尝试次数的 标志位, 并做相关处理
+        if self.get_retry_and_do_retry():
+            return True
+
         logger.info("\n\n")
         logger.info(f"================  开始 测试步骤 {func.__name__} 测试步骤  ================")
-
-        # 重置测试步骤的所有上下文信息 并初始化
-        step_context = StepContext()
-        step_context.reset_all_context()
-        step_context.init_step(api_type, func, **kwargs)  # 将当前测试步骤的信息初始化到步骤上下文中
 
         # 将fetch从kwargs中提取出来
         self.get_fetch()
@@ -491,7 +574,7 @@ class Api:
     def json(self, func):
         def wrapper(**kwargs):
             """我是wrapper的注释"""
-            step_check_res = Api().abstract_api("json", func, **kwargs)
+            step_check_res = Api().abstract_api("json", func, wrapper, **kwargs)
             return step_check_res
 
         return wrapper
@@ -500,7 +583,7 @@ class Api:
     def urlencoded(self, func):
         def wrapper(**kwargs):
             """我是wrapper的注释"""
-            step_check_res = Api().abstract_api("urlencoded", func, **kwargs)
+            step_check_res = Api().abstract_api("urlencoded", func, wrapper, **kwargs)
             return step_check_res
 
         return wrapper
@@ -509,7 +592,7 @@ class Api:
     def form_data(self, func):
         def wrapper(**kwargs):
             """我是wrapper的注释"""
-            step_check_res = Api().abstract_api("form_data", func, **kwargs)
+            step_check_res = Api().abstract_api("form_data", func, wrapper, **kwargs)
             return step_check_res
 
         return wrapper
