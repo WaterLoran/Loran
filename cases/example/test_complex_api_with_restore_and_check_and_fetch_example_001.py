@@ -1,6 +1,5 @@
 # coding=utf8
 from common.ruoyi_logic import *
-from core.event import Event
 
 
 class TestComplexApiWithRestoreAndCheckAndFetchExample001:
