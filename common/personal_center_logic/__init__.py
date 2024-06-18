@@ -1,5 +1,4 @@
-from core.logic import Api
-import allure
+from core.logic import *
 
 
 @Api.form_data

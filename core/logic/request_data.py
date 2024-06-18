@@ -1,5 +1,5 @@
 import jsonpath
-from core.ruoyi_hook.logger import LoggerManager
+from core.logger import LoggerManager
 from ..ruoyi_error import RuoyiError
 
 

@@ -1,9 +1,6 @@
 import json
-import yaml
 import requests
-from easydict import EasyDict
-from core.init import *
-from core.ruoyi_hook.logger import LoggerManager
+from core.logger import LoggerManager
 from ..ruoyi_error import RuoyiError
 from config import *
 

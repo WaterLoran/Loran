@@ -34,6 +34,9 @@ class ServiceContext(metaclass=SingletonMeta):
         # 脚本运行时_链条, 用于记录脚本运行到哪一个关键字了, 并做记录, 最后一个节点为未来完结的关键字节点(末节点记录为,script_end)
         self.runtime_chain = []
 
+        # 钩子函数中的信息
+        self.base_path = ""
+
     def reset_service_context(self):
         self.func_call_count = {}
         self.restore_list = []

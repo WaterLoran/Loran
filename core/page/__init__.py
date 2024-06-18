@@ -3,7 +3,7 @@ import functools
 import jsonpath
 import pytest_check
 from core.page.ui_init import *
-from core.ruoyi_hook.logger import LoggerManager
+from core.logger import LoggerManager
 from ..ruoyi_error import RuoyiError
 
 logger = LoggerManager().get_logger("main")

@@ -6,6 +6,7 @@ class TestRetryFuncExample001:
     """
     使用 retry 功能的例子
     """
+
     def setup(self):
         pass
 
@@ -31,5 +32,6 @@ class TestRetryFuncExample001:
             userName=var_name,
             restore=True
         )
+
     def teardown(self):
         pass

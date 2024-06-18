@@ -1,13 +1,12 @@
 # coding: utf-8
 import os
-import sys
 import jsonschema
 import pandas as pd
 import pytest_check
 from openpyxl import load_workbook
 from core.init import FILES_PATH
 
-from core.ruoyi_hook.logger.logger_interface import logger
+from core.logger.logger_interface import logger
 
 
 class ExcelAssertion:

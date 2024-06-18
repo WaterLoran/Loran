@@ -1,5 +1,6 @@
 from core.logger import logger_init, logger_end
 from common.ruoyi_logic import *
+import json
 
 """
 打包方法：
@@ -26,30 +27,35 @@ def pytest_collection_modifyitems(items):
     pass
 
 def pytest_collect_file(file_path, path, parent):
-    print("file_path, path, parent", file_path, path, parent)
-    global case_file_path_dict
-    py_file_name = os.path.split(file_path)[1]  # test_add_user_998.py
-    case_file_path_dict[py_file_name] = str(file_path)
-    # case_file_path_dict = {
-    #     "test_add_user_998.py": r"E:\Develop\RuoYiTest\cases\api\system_management\user_management\test_add_user_998.py"
-    # }
-
+    print("pytest_collect_file 当前这个钩子函数不再使用")
+    # print("file_path, path, parent", file_path, path, parent)
+    # global case_file_path_dict
+    # py_file_name = os.path.split(file_path)[1]  # test_add_user_998.py
+    # case_file_path_dict[py_file_name] = str(file_path)
 
 def pytest_runtest_logstart(nodeid, location):
     print("pytest_runtest_logstart", nodeid, location)
     global logger
-    global case_file_path_dict
-    py_file_name = location[0]
+    service_context = ServiceContext()
+    base_path = service_context.base_path
 
+    py_file_path = location[0]  # 即 以 ..cases 开头, 或者 cases 开头的文件路径
     # 因为在pycharm中执行 和 使用run_api_case来执行的调用过程不同,导致py_file_name信息不一致,需要做处理
     # run_api_case 场景: py_file_name ..\cases\api\process\architecture\new\test_process_architecture_add_001.py
     # 直接pycharm场景py_file_name test_process_architecture_add_001.py
-    if "\\" in py_file_name or "/" in py_file_name:
-        py_file_name = os.path.split(py_file_name)[1]
+    if ".." in py_file_path:
+        py_file_path = py_file_path[2:]
 
-    abs_file_path = case_file_path_dict[py_file_name]
+    case_id = os.path.basename(py_file_path)[:-3]
+
+    abs_file_path = os.path.join(base_path, py_file_path)
     logger = logger_init(abs_file_path)
-    pass
+
+    # 重置 业务上下文中的 restore_list 和 runtime_chain
+    service_context = ServiceContext()
+    service_context.reset_service_context()  # 需要再每个脚本的最开始处, 将业务的上下文信息清除掉, 因为连跑的时在同一个进程中的数据不会被清理
+    service_context.case_id = case_id
+
 
 def pytest_runtest_teardown(item, nextitem):
     """

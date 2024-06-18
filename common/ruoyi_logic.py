@@ -1,8 +1,5 @@
-import allure
-
-# 做一些基本的初始化
-from easydict import EasyDict as register
-
+# 导入框架核心
+from core.init import *
 
 # 导入所有的logic
 from common.system_management_logic import *

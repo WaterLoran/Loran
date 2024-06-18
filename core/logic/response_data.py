@@ -2,7 +2,7 @@ import copy
 import json
 import jsonpath
 import pytest_check
-from core.ruoyi_hook.logger import LoggerManager
+from core.logger import LoggerManager
 from ..ruoyi_error import RuoyiError
 
 

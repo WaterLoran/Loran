@@ -1,4 +1,4 @@
-from core.ruoyi_hook.logger.logger_interface import logger
+from core.logger.logger_interface import logger
 from core.context import ServiceContext
 
 class ComplexApi:

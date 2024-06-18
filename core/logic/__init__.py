@@ -1,16 +1,17 @@
 import copy
 import json
 import time
-from core.init import *
+import allure
 import pytest_check
 from config import *
 from .base_api import BaseApi
 from .request_data import RequestData
 from .response_data import ResponseData
-from core.ruoyi_hook.logger import LoggerManager
+from core.logger import LoggerManager
 from ..ruoyi_error import RuoyiError
 from .complex_api import ComplexApi
 from core.context import ServiceContext
+from easydict import EasyDict as register
 
 
 logger = LoggerManager().get_logger("main")
@@ -596,3 +597,12 @@ class Api:
             return step_check_res
 
         return wrapper
+
+
+__all__ = [
+    "Api",  # 常用API
+    "ComplexApi",  # 复合 APi
+    "allure",  # 报告
+    "register",  # 注册器
+    "config",  # 全局配置
+]
