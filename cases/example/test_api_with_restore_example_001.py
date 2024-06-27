@@ -18,6 +18,10 @@ class TestApiWithRestoreExample001:
         var_name = "api_with_restore_example_001"
         add_user(
             userName=var_name, nickName=var_name, password=var_name,
+            check=[
+                ["$.msg", "eq", "操作成功"],
+                ["$.msg", "eq", "操作成功"],
+            ]
         )
 
         # 这个关键字就带有restore, 即查看后会在后置中去清除数据,

@@ -1,10 +1,8 @@
 import copy
-import json
-import jsonpath
 import pytest_check
 from core.logger import LoggerManager
-from ..ruoyi_error import RuoyiError
-
+from core.check import *
+from core.fetch import *
 
 logger = LoggerManager().get_logger("main")
 
@@ -13,146 +11,11 @@ class ResponseData:
     def __init__(self):
         pass
 
-    def _fetch_one_value(self, rsp_data, each_fetch):
-
-        # 做一个提取信息的操作
-        logger.debug(f"_fetch_one_value::each_fetch:: {each_fetch} ")
-        reg = each_fetch[0]
-        reg_key = each_fetch[1]
-        jsonpath_regex = each_fetch[2]
-
-        target_value = jsonpath.jsonpath(rsp_data, jsonpath_regex)[0]
-        logger.debug(f"提取出来的目标信息::target_value:: {target_value} ")
-
-        reg[reg_key] = target_value
-
-    def fetch_all_value(self, rsp_data, fetch):
-        if fetch is None:
-            return
-
-        # 判断入参的格式, 然后统一一下格式
-        # 判断check传进来的参数是不是二维列表, 并处理
-        change_two_dimensional_flag = False
-
-        for element in fetch:
-            if not isinstance(element, list):
-                change_two_dimensional_flag = True
-                break
-        if change_two_dimensional_flag:
-            fetch = [fetch]
-
-        for each_fetch in fetch:
-            self._fetch_one_value(rsp_data, each_fetch)
-
-    def get_unify_compare_symbol(self, symbol):
-        compare_dict = {
-            "equal": ["==", "eq", "equal"],
-            "not_equal": ["!=", "not_equal", "not_eq"],
-            "greater": [">", "lg", "larger", "greater"],
-            "less": ["<", "smaller", "less"],
-            "greater_equal": [">=", "greater_equal"],
-            "less_equal": ["<=", "less_equal"],
-            "in": ["in"],
-            "not_in": ["not_in"],
-            "include": ["include"],
-            "not_include": ["not_include"],
-        }
-        for key, value in compare_dict.items():
-            if symbol in value:
-                return key
-        raise RuoyiError("the_comparator_is_not_defined", symbol=symbol, compare_dict=compare_dict)
-
-    def compare_action(self, compared_obj, compare_type, target):
-        if compare_type == "equal":
-            pytest_check_result = pytest_check.equal(compared_obj, target)
-        elif compare_type == "not_equal":
-            pytest_check_result = pytest_check.not_equal(compared_obj, target)
-        elif compare_type == "greater":
-            pytest_check_result = pytest_check.greater(compared_obj, target)
-        elif compare_type == "greater_equal":
-            pytest_check_result = pytest_check.greater_equal(compared_obj, target)
-        elif compare_type == "less":
-            pytest_check_result = pytest_check.less(compared_obj, target)
-        elif compare_type == "less_equal":
-            pytest_check_result = pytest_check.less_equal(compared_obj, target)
-        elif compare_type == "in":
-            pytest_check_result = pytest_check.is_in(compared_obj, target)
-        elif compare_type == "not_in":
-            pytest_check_result = pytest_check.is_not_in(compared_obj, target)
-        elif compare_type == "include":
-            pytest_check_result = pytest_check.is_in(target, compared_obj)
-        elif compare_type == "not_include":
-            pytest_check_result = pytest_check.is_not_in(target, compared_obj)
-        else:
-            raise
-
-        return pytest_check_result
-
-    def _check_one_expect(self, rsp_data, each_check):
-        jsonpath_regex = each_check[0]
-        compare_symbol = each_check[1]
-        target = each_check[2]
-
-        if compare_symbol == "exist":  # 如果是为了某个jsonpath表达式在响应中是否存在
-            fetch_res = jsonpath.jsonpath(rsp_data, jsonpath_regex)  # 能提取到这位 [[XX], ...] 一个二维列表, 否则为False
-            if target is False:
-                pytest_check_res = pytest_check.is_false(fetch_res)
-            elif target is True:
-                pytest_check_res = pytest_check.is_true(fetch_res)
-            else:
-                logger.error(f"当断言类型为 exist时候, 期望的值只能为True或者False, 而您输入的为{target}")
-                raise
-
-            if not pytest_check_res:
-                logger.error(f"期望使用 {jsonpath_regex} 表达式 去响应中 断言其对应存在性为 {target} , 但实际为 {pytest_check_res}")
-                logger.error("被断言的响应体信息为  " + json.dumps(rsp_data, indent=2, ensure_ascii=False))
-            else:
-                logger.debug(f"期望使用 {jsonpath_regex} 表达式 去响应中 断言其对应存在性为 {target} , 期望和实际一致, 成功")
-
-        else:  # 平常的值对象的比较, 即大小包含这些
-            # 从响应体中取出被比较对象
-
-            fetch_res = jsonpath.jsonpath(rsp_data, jsonpath_regex)
-            if not fetch_res:
-                logger.error(f"使用该jsonpath表达式不能从响应体中取得对应数据, 对应jsonpath表达式为{jsonpath_regex}")
-                logger.error("被断言的响应体信息为  " + json.dumps(rsp_data, indent=2, ensure_ascii=False))
-                raise
-            else:
-                compared_obj = fetch_res[0]
-                # compared_obj = jsonpath.jsonpath(rsp_data, jsonpath_regex)[0]
-            # 比较符的统一
-            compare_type = self.get_unify_compare_symbol(compare_symbol)
-
-            # 做实际比较
-            cmp_res = self.compare_action(compared_obj, compare_type, target)
-            logger.debug("单个断言::compared_obj::" + str(compared_obj))
-            logger.debug("单个断言::compare_type::" + str(compare_type))
-            logger.debug("单个断言::target::" + str(target))
-            logger.info("断言结果cmp_res::" + str(cmp_res))
-            return cmp_res
+    def rsp_fetch_all_value(self, rsp_data, fetch):
+        return fetch_json_all_value(rsp_data, fetch)
 
     def check_all_expect(self, rsp_data, check):
-
-        if check is None:
-            return True
-
-        # 判断check传进来的参数是不是二维列表, 并处理
-        change_two_dimensional_flag = False
-        for element in check:
-            if not isinstance(element, list):
-                change_two_dimensional_flag = True
-                break
-        if change_two_dimensional_flag:
-            check = [check]
-
-        # 依次对各个断言进行操作
-        service_check_res = True
-        for each_check in check:
-            one_check_res = self._check_one_expect(rsp_data, each_check)
-            if one_check_res is False:
-                service_check_res = False
-        return service_check_res
-
+        return check_json_all_expect(rsp_data, check)
 
     def check_api_default_expect(self, req_data, rsp_data, rsp_check, check):
         # 将rsp_check 转换成  类似于  check = [Var_a, "==", "target_value"]

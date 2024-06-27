@@ -502,7 +502,7 @@ class Api:
 
         # 做提取信息操作
         logger.info(f"========  开始 {func.__name__}步骤的 信息提取  ========")
-        ResponseData().fetch_all_value(rsp_data, fetch)
+        ResponseData().rsp_fetch_all_value(rsp_data, fetch)
         logger.info(f"========  结束 {func.__name__}步骤的 信息提取  ========")
 
         pass
