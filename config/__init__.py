@@ -1,7 +1,7 @@
 import os
 from core.init import *
 from easydict import EasyDict
-from utils.files_tool.yaml_tool import YamlTool
+from core.utils.files_tool.yaml_tool import YamlTool
 
 
 try:

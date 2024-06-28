@@ -4,7 +4,15 @@ from easydict import EasyDict as register
 from core.context import ServiceContext
 
 
-BASE_PATH = os.path.split(os.path.dirname(os.path.abspath(__file__)))[0]
+def get_project_root():
+    for path in sys.path:
+        if os.path.exists(os.path.join(path, 'cases')) or os.path.exists(os.path.join(path, 'case')):  # 包含cases的, 就是根目录
+            return os.path.abspath(path)
+    raise FileNotFoundError("Could not find project root containing setup.py")
+
+
+BASE_PATH = get_project_root()
+
 print("BASE_PATH", BASE_PATH)
 
 COMMON_PATH = os.path.join(BASE_PATH, 'common')
@@ -22,10 +30,5 @@ sys.path.append(CONFIG_PATH)
 sys.path.append(CORE_PATH)
 
 from core import hook
+
 pytest_plugins = ["hook"]  # 导入并注册插件模块
-
-
-
-
-
-
