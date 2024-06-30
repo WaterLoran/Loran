@@ -46,9 +46,9 @@ class BaseApi:
 
     def env_info_init(self):
 
-        self.base_url = config.env_ip
-        self.username = config.env_user
-        self.password = config.env_password
+        self.base_url = config.env.main.domain
+        self.username = config.env.main.username
+        self.password = config.env.main.password
 
     def get_token(self):
         # 首先去指定地方尝试获取token,

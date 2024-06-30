@@ -1,3 +1,7 @@
-env_ip: http://127.0.0.1
-env_user: admin
-env_password: admin123
+env:
+  desc: "main表示主要环境, 通常被测系统只有一个环境,这里默认为main, 如有第二个系统, 则参考main的写法编写第二环境信息"
+  main:
+    domain: http://127.0.0.1
+    username: admin
+    password: admin123
+    desc: "domain表示域名即登录时uri前面的所有字符串, username和password分别表示登录时候的账号密码"

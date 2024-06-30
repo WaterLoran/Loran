@@ -3,9 +3,9 @@ from config import *
 
 
 def login_ruoyi(**kwargs):
-    base_url = config.env_ip
-    username = config.env_user
-    password = config.env_password
+    base_url = config.env.main.domain
+    username = config.env.main.username
+    password = config.env.main.password
 
     login_page_url = base_url + "/login?redirect=/index"
     sb = get_sb_instance()
