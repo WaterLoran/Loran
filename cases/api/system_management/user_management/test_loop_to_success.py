@@ -1,5 +1,5 @@
 from common.ruoyi_logic import *
-from core.event import Event
+
 
 class TestLoopToSuccess:
     def setup(self):

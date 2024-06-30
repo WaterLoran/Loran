@@ -77,7 +77,7 @@ if __name__ == '__main__':
             allure_result_path = r"E:\Develop\RuoYiTest\output\allure_result"
             allure_report_path = r"E:\Develop\RuoYiTest\output\allure_report"
             os.system(f"allure generate {allure_result_path} -o {allure_report_path} --clean")
-        #     # TODO 拉起进程前, 需要杀掉allure的进程
-            os.system(f"allure open -h 127.0.0.1 -p 8078 {allure_report_path}")
+        #     # TODO 拉起进程前, 需要杀掉allure的进程, window情况直接手工点击 output下的allure_report下的index.html 即可
+        #     os.system(f"allure open -h 127.0.0.1 -p 8078 {allure_report_path}")
     except:
         pass

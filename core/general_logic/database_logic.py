@@ -1,12 +1,7 @@
-from .excel_assertion import ExcelAssertion
-from core.mysql import *
+from core.general_logic.databases.mysql import *
 from core.check import *
 from core.fetch import *
 from core.logger.logger_interface import logger
-
-def check_excel(check):
-    excel_assertion = ExcelAssertion()
-    excel_assertion.do_assert(check)
 
 def exec_mysql(sql="", host="", port="", user="", password="", db="", **kwargs):
     mysql_tool = MysqlTool()

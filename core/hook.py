@@ -15,13 +15,13 @@ pip install wheel
 logger = None
 py_file_2_abs_path = {}
 
+
 def pytest_collect_file(file_path, path, parent):
     # pycharm执行的时候, 会跳过这个钩子函数, 所以, 不使用这个钩子函数了
     print("pytest_collect_file 当前这个钩子函数不再使用")
 
 
 def pytest_collection_modifyitems(items):
-    # print("items", items)  # [<Function test_add_user_998>]
     """
     测试用例收集完成时，将收集到的item的name和nodeid的中文显示在控制台上
     :return:
@@ -32,8 +32,8 @@ def pytest_collection_modifyitems(items):
         item._nodeid = item.nodeid.encode("utf-8").decode("unicode_escape")
 
         # 汇聚 py文件名(basename带.py) 和 绝对路径的映射关系
-        basename = items[0].fspath.basename
-        strpath = items[0].fspath.strpath
+        basename = item.fspath.basename
+        strpath = item.fspath.strpath
         py_file_2_abs_path[basename] = strpath
 
 

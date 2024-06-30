@@ -36,5 +36,5 @@ print("CORE_PATH", CORE_PATH)
 sys.path.append(CORE_PATH)
 
 from core import hook
-
+from core.general_logic import *  # 导入通用logic, 即excel类的, 数据库操作类的logic
 pytest_plugins = ["hook"]  # 导入并注册插件模块
