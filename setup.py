@@ -26,7 +26,8 @@ setup(
         "easydict==1.11",
         "colorlog==6.8.0",
         "allure-pytest==2.13.2",
-        "seleniumbase==4.22.5"
+        "seleniumbase==4.22.5",
+        "xlrd==2.0.1"
     ],
     packages=find_packages(include=['core', 'core.*'], exclude=['common', 'common.*']),  # 自动查找包, 当前这种写法, 会导入多余的目录common
     # package_dir={'': '.'},          # 指定包目录
