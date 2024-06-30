@@ -26,10 +26,11 @@ setup(
         "easydict==1.11",
         "colorlog==6.8.0",
         "allure-pytest==2.13.2",
+        "seleniumbase==4.22.5"
     ],
     packages=find_packages(include=['core', 'core.*'], exclude=['common', 'common.*']),  # 自动查找包, 当前这种写法, 会导入多余的目录common
     # package_dir={'': '.'},          # 指定包目录
-    py_modules=['core.check'],
+    py_modules=[''],
     include_package_data=True,
     zip_safe=False,
     keywords=['Test', "AutoTest", "automated testing", "测试", "自动化测试"],

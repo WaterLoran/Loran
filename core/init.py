@@ -19,14 +19,20 @@ COMMON_PATH = os.path.join(BASE_PATH, 'common')
 CONFIG_PATH = os.path.join(BASE_PATH, 'config')
 FILES_PATH = os.path.join(BASE_PATH, 'files')
 LOG_PATH = os.path.join(BASE_PATH, 'logs')
-CORE_PATH = os.path.join(BASE_PATH, 'core')
 
 # 将工程的基本的路径信息记录到业务上下文
 service_context = ServiceContext()
 service_context.base_path = BASE_PATH
+service_context.log_path = LOG_PATH
 
 sys.path.append(COMMON_PATH)
 sys.path.append(CONFIG_PATH)
+
+# 指定core目录, 因为打包成pip库之后, 工程的目录文件和core的目录文件就区分开了, 所以要以绝对路径的方式计算core的路径
+core_base_path = os.path.split(os.path.dirname(os.path.abspath(__file__)))[0]
+CORE_PATH = os.path.join(core_base_path, 'core')
+sys.path.append(CORE_PATH)
+print("CORE_PATH", CORE_PATH)
 sys.path.append(CORE_PATH)
 
 from core import hook

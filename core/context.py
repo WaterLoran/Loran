@@ -36,6 +36,7 @@ class ServiceContext(metaclass=SingletonMeta):
 
         # 钩子函数中的信息
         self.base_path = ""
+        self.log_path = ""
 
     def reset_service_context(self):
         self.func_call_count = {}

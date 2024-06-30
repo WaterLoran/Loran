@@ -12,44 +12,48 @@ pip install setuptools
 pip install wheel
 """
 
-case_file_path_dict = {}
 logger = None
+py_file_2_abs_path = {}
+
+def pytest_collect_file(file_path, path, parent):
+    # pycharm执行的时候, 会跳过这个钩子函数, 所以, 不使用这个钩子函数了
+    print("pytest_collect_file 当前这个钩子函数不再使用")
+
 
 def pytest_collection_modifyitems(items):
-    # print("items", items)
+    # print("items", items)  # [<Function test_add_user_998>]
     """
     测试用例收集完成时，将收集到的item的name和nodeid的中文显示在控制台上
     :return:
     """
+    global py_file_2_abs_path
     for item in items:
         item.name = item.name.encode("utf-8").decode("unicode_escape")
         item._nodeid = item.nodeid.encode("utf-8").decode("unicode_escape")
-    pass
 
-def pytest_collect_file(file_path, path, parent):
-    print("pytest_collect_file 当前这个钩子函数不再使用")
-    # print("file_path, path, parent", file_path, path, parent)
-    # global case_file_path_dict
-    # py_file_name = os.path.split(file_path)[1]  # test_add_user_998.py
-    # case_file_path_dict[py_file_name] = str(file_path)
+        # 汇聚 py文件名(basename带.py) 和 绝对路径的映射关系
+        basename = items[0].fspath.basename
+        strpath = items[0].fspath.strpath
+        py_file_2_abs_path[basename] = strpath
+
 
 def pytest_runtest_logstart(nodeid, location):
     print("pytest_runtest_logstart", nodeid, location)
     global logger
-    service_context = ServiceContext()
-    base_path = service_context.base_path
+    global py_file_abs_path
 
-    py_file_path = location[0]  # 即 以 ..cases 开头, 或者 cases 开头的文件路径
+    basename = location[0]  # 即 以 ..cases 开头, 或者 cases 开头的文件路径
+    basename = os.path.basename(basename)  # 非安装 pycharm执行是 case开头的, 需要再取一次basename
+    case_id = os.path.basename(basename)[:-3]
+
     # 因为在pycharm中执行 和 使用run_api_case来执行的调用过程不同,导致py_file_name信息不一致,需要做处理
     # run_api_case 场景: py_file_name ..\cases\api\process\architecture\new\test_process_architecture_add_001.py
     # 直接pycharm场景py_file_name test_process_architecture_add_001.py
-    if ".." in py_file_path:
-        py_file_path = py_file_path[2:]
+    # 现在直接从 pytest_collection_modifyitems 中收集好的数据去提取想信息
 
-    case_id = os.path.basename(py_file_path)[:-3]
-
-    abs_file_path = os.path.join(base_path, py_file_path)
-    logger = logger_init(abs_file_path)
+    # 注册日志器
+    py_file_abs_path = py_file_2_abs_path[basename]
+    logger = logger_init(py_file_abs_path)
 
     # 重置 业务上下文中的 restore_list 和 runtime_chain
     service_context = ServiceContext()
@@ -96,8 +100,8 @@ def pytest_runtest_teardown(item, nextitem):
                  json.dumps(service_context.runtime_chain, indent=2, ensure_ascii=False))
     # ==========================================================   读取脚本上下文中的restore_list, 来做恢复操作
 
+
 def pytest_runtest_logfinish(nodeid, location):
     print("pytest_runtest_logfinish", nodeid, location)
     global logger
     logger_end()
-    pass

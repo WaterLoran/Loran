@@ -3,7 +3,7 @@ import time
 import logging
 import logging.handlers
 import colorlog
-from core.init import LOG_PATH
+from core.context import ServiceContext
 
 
 class SingletonMeta(type):
@@ -75,6 +75,8 @@ class LoggerManager(metaclass=SingletonMeta):
             t_folder = os.path.join(t_folder, new_folder_list[i])
 
         # 生成日志文件所在的目录(绝对
+        service_context = ServiceContext()
+        LOG_PATH = service_context.log_path
         log_file_directory = os.path.join(LOG_PATH, t_folder)  # 日志所在的绝对目录
 
         # 获取日志文件的文件名, 名字中包含时间戳
