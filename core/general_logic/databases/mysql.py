@@ -45,11 +45,9 @@ class MysqlTool:
         db = db_cfg if db == "" else db
 
         # 如果传入的port为str, 则转换为int
-        print("port", port)
         if isinstance(port, str):
             port = int(port)
 
-        print("host, port, user, password, db", host, port, user, password, db)
         return host, port, user, password, db
 
     def connect_and_exec_sql(self, sql="", host="", port="", user="", password="", db="", select=""):
