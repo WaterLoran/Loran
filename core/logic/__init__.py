@@ -3,12 +3,11 @@ import json
 import time
 import allure
 import pytest_check
-from config import *
 from .base_api import BaseApi
 from .request_data import RequestData
 from .response_data import ResponseData
 from core.logger import LoggerManager
-from ..ruoyi_error import RuoyiError
+from core.ruoyi_error import RuoyiError
 from .complex_api import ComplexApi
 from core.context import ServiceContext
 from easydict import EasyDict as register
@@ -598,6 +597,9 @@ class Api:
 
         return wrapper
 
+
+service_context = ServiceContext()
+config = service_context.config
 
 __all__ = [
     "Api",  # 常用API

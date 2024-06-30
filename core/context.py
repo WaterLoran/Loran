@@ -37,6 +37,10 @@ class ServiceContext(metaclass=SingletonMeta):
         # 钩子函数中的信息
         self.base_path = ""
         self.log_path = ""
+        self.config_path = ""
+
+        # config目录下的全局config
+        self.config = {}
 
     def reset_service_context(self):
         self.func_call_count = {}

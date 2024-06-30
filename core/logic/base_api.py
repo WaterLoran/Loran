@@ -1,8 +1,8 @@
 import json
 import requests
 from core.logger import LoggerManager
-from ..ruoyi_error import RuoyiError
-from config import *
+from core.context import ServiceContext
+from core.ruoyi_error import RuoyiError
 
 
 logger = LoggerManager().get_logger("main")
@@ -46,6 +46,7 @@ class BaseApi:
 
     def env_info_init(self):
 
+        config = ServiceContext().config
         self.base_url = config.env.main.domain
         self.username = config.env.main.username
         self.password = config.env.main.password
