@@ -3,10 +3,13 @@ from core.utils.files_tool.yaml_tool import YamlTool
 from easydict import EasyDict
 from core.context import ServiceContext
 
-def load_all_config_base_config_path():
+def load_all_config_base_config_path(config_path=""):
     try:
         service_context = ServiceContext()
-        CONFIG_PATH = service_context.config_path
+        if config_path != "":  # 用于调试场景, 手工传入配置的路径  XX\config
+            CONFIG_PATH = config_path
+        else:
+            CONFIG_PATH = service_context.config_path
 
         config = {}
         # 查找出当前目录下的所有yaml文件

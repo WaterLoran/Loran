@@ -42,6 +42,9 @@ class ServiceContext(metaclass=SingletonMeta):
         # config目录下的全局config
         self.config = {}
 
+        # 不同环境的authorization授权信息, 即相关的cookie或者token信息
+        self.authorization = {}
+
     def reset_service_context(self):
         self.func_call_count = {}
         self.restore_list = []
