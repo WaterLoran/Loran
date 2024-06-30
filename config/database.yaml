@@ -1,0 +1,16 @@
+database:
+  mysql:
+    desc: "main表示默认的数据库, 如果需要支持多套数据库, 则参照main的格式来写, 起名可任意, 但main不能修改"
+    main:
+      host: "127.0.0.1"
+      port: 3306
+      user: root
+      password: "admin@123"
+      db: "ry-vue"
+    second_db:
+      host: "127.0.0.1"
+      port: 3306
+      user: root
+      password: "admin@123"
+      db: "ry-vue"
+
