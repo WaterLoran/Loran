@@ -2,16 +2,6 @@ from core.logger import logger_init, logger_end
 from common.ruoyi_logic import *
 import json
 
-"""
-打包方法：
-终端进入到 setup.py 文件路径下，执行打包命令：python setup.py sdist bdist_wheel
-pip卸载插件包命令
-pip安装插件包命令
-备注:
-pip install setuptools
-pip install wheel
-"""
-
 logger = None
 py_file_2_abs_path = {}
 

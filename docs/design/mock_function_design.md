@@ -68,3 +68,46 @@
 4. 提供真实第三方软件的配置信息
 5. 针对热mock服务提供 mock模板(即和mock关键字所用配置一致, 即mock_app默认信息)
 6. mock关键字所关联的配置 和 mock服务所关联的配置 是同一份
+
+### 参考代码
+
+```python
+import requests
+import requests_mock
+
+# 创建一个请求会话
+session = requests.Session()
+
+# 创建一个请求mock
+adapter = requests_mock.Adapter()
+session.mount('mock://', adapter)
+
+# 模拟 GET 请求
+adapter.register_uri('GET', 'mock://api/user/1', json={'userId': 1, 'username': 'John Doe', 'email': 'john.doe@example.com'})
+
+# 模拟 POST 请求
+def match_login_request(request):
+    data = request.json()
+    if data.get('username') == 'admin' and data.get('password') == 'password':
+        return {'message': 'Login successful'}
+    return requests_mock.create_response(request, json={'message': 'Invalid username or password'}, status_code=401)
+
+adapter.register_uri('POST', 'mock://api/login', json=match_login_request)
+
+# 示例函数来测试 GET 请求
+def get_user(user_id):
+    response = session.get(f'mock://api/user/{user_id}')
+    print(response.json())
+
+# 示例函数来测试 POST 请求
+def login(username, password):
+    response = session.post('mock://api/login', json={'username': username, 'password': password})
+    print(response.json())
+
+# 示例调用
+get_user(1)  # 获取用户信息
+login('admin', 'password')  # 登录
+login('user', 'wrongpassword')  # 尝试使用错误密码登录
+
+```
+
