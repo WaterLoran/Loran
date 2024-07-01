@@ -1,4 +1,4 @@
-from core.ruoyi_hook.logger import LoggerManager
+from core.logger import LoggerManager
 
 
 logger = LoggerManager().get_logger("main")

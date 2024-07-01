@@ -1,12 +1,17 @@
 import copy
 import json
-from core.init import *
-from config import *
+import time
+import allure
+import pytest_check
 from .base_api import BaseApi
 from .request_data import RequestData
 from .response_data import ResponseData
-from core.ruoyi_hook.logger import LoggerManager
-from ..ruoyi_error import RuoyiError
+from core.logger import LoggerManager
+from core.ruoyi_error import RuoyiError
+from .complex_api import ComplexApi
+from core.context import ServiceContext
+from easydict import EasyDict as register
+
 
 logger = LoggerManager().get_logger("main")
 
@@ -55,16 +60,18 @@ class StepContext(metaclass=SingletonMeta):
         self.req_json = None
         self.rsp_check = None
         self.auto_fill = None
-        self.teardown = None
         self.req_params = None
         self.req_json = None
         self.auto_fill = None
-        self.teardown = None
         self.files = None
         self.data = None
 
         self.rsp_data = None  # 可能为rsp_json, 也可能是rsp.__dict__
         self.default_check_res = None
+
+        self.api_restore = None
+        self.cur_restore_flag = False
+
     def reset_all_context(self):
         self.api_type = ""  # 请求的类型
         self.func = ""  # 测试步骤的说调用的函数名
@@ -79,16 +86,17 @@ class StepContext(metaclass=SingletonMeta):
         self.req_json = None
         self.rsp_check = None
         self.auto_fill = None
-        self.teardown = None
         self.req_params = None
         self.req_json = None
         self.auto_fill = None
-        self.teardown = None
         self.files = None
         self.data = None
 
         self.rsp_data = None  # 可能为rsp_json, 也可能是rsp.__dict__
         self.default_check_res = None
+
+        self.api_restore = None
+        self.cur_restore_flag = False
 
     def init_step(self, api_type, func, **kwargs):
         self.api_type = api_type  # 请求的类型
@@ -114,8 +122,8 @@ class Api:
         # 描述各类型请求的必须信息和非必须信息
         api_type_field = {
             # Api类型: 必须要有的
-            "json": [["req_method", "req_url", "req_json"], ["rsp_check", "auto_fill", "teardown"]],
-            "urlencoded": [["req_method", "req_url", "req_params"], ["req_json", "rsp_check", "autofill", "teardown"]],
+            "json": [["req_method", "req_url", "req_json"], ["rsp_check", "auto_fill", "restore"]],
+            "urlencoded": [["req_method", "req_url", "req_params"], ["req_json", "rsp_check", "auto_fill", "restore"]],
             "form_data": [["req_method", "req_url"], ["files", "data", "req_params", "rsp_check"]],
         }
         required_para = api_type_field[api_type][0]
@@ -163,6 +171,87 @@ class Api:
 
         step_context.check = check
 
+    def get_restore(self):
+        step_context = StepContext()
+        t_kwargs = step_context.unprocessed_kwargs
+
+        restore = False
+        if "restore" in t_kwargs.keys():
+            restore = t_kwargs["restore"]
+            del t_kwargs["restore"]
+            logger.debug(f"业务脚本层的 恢复标志位 为 restore {restore}")
+
+        step_context.cur_restore_flag = restore
+
+    def do_retry_logic(self):
+        service_context = ServiceContext()
+        step_context = StepContext()
+
+        remain_retry = service_context.remain_retry
+        wrapper_func = service_context.wrapper
+        kwargs = step_context.func_kwargs
+
+        if "retry" in kwargs:
+            del kwargs["retry"]
+
+        # 循环执行该函数, 并根据结果判断是否继续执行
+        retry_count = 0
+        while remain_retry > 0:
+            remain_retry -= 1
+            retry_count += 1
+            logger.debug(f">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 正在尝试第{retry_count}次")
+
+            step_assert_res = wrapper_func(**kwargs)  # 调用函数本身, 但是已经移除retry参数
+
+            if not step_assert_res:  # 成功是结果为成功
+                logger.warning(f"第 {retry_count} 次的 尝试执行logic结果为 失败")
+            else:  # 重试的结果为成功
+                logger.info(f"第 {retry_count} 次的 尝试执行logic结果为 成功")
+                # 如果重试成功的话, 则恢复相关的错误堆栈信息 到 这个logic之前, 即从 service_context 中取出这个数据, 并更新
+                pytest_check.check_log._num_failures = service_context.stack_pytest_check_num_failures
+                pytest_check.check_log._failures = service_context.stack_pytest_check_failures
+
+                # 更新 这个步骤的断言结果, 即这个logic的执行结果,
+                # fetch如果有问题, 会直接抛出异常,而不是暂时记录结果, 所以retry功能对fetch不能使用, TODO, 这里考虑如何开发维护框架
+                # 实际脚本的写法中, 可通过多次retry去check 成功某个logic之后, 再去fetch, 就能保证可靠性, 就可以规避这个问题
+                step_context.step_check_res = True
+                step_context.service_check_res = True
+                step_context.api_check_res = True
+                break  # 跳出这个循环
+
+            time.sleep(1)  # 每次重试之间间隔一秒
+
+        return self.get_step_check_res()
+
+
+    def get_retry_and_do_retry(self):
+        step_context = StepContext()
+        service_context = ServiceContext()
+        t_kwargs = step_context.unprocessed_kwargs
+        func_name = step_context.func.__name__
+
+        has_retry = False
+        retry = 0  # 默认是不重新尝试的
+        if "retry" in t_kwargs.keys():
+            has_retry = True
+            logger.debug(f"将要对 {func_name} 函数尝试执行 {retry} 次, 直到成功")
+            retry = t_kwargs["retry"]
+            if not isinstance(retry, int):
+                logger.error("retry参数表示对该logic最多尝试的次数, 仅允许int类型")
+                raise
+            del t_kwargs["retry"]
+
+            # 如果传入了retry, 才去记录pytest_check 所记录的 断言信息 stack
+            service_context.stack_pytest_check_num_failures = copy.deepcopy(
+                pytest_check.check_log._num_failures)  # 记录原始的失败次数
+            service_context.stack_pytest_check_failures = copy.deepcopy(pytest_check.check_log._failures)  # 记录原始的错误msg
+
+        service_context.remain_retry = retry  # 每次的logic调用, 都会获取并更新这个变量
+
+        # 如果有has_retry, 则执行do_retry_logic
+        if has_retry:
+            return self.do_retry_logic()
+
     def get_api_data(self):
         step_context = StepContext()
         api_type = step_context.api_type
@@ -170,16 +259,16 @@ class Api:
         kwargs = step_context.unprocessed_kwargs
 
         if api_type == "json":
-            req_method, req_url, req_json, rsp_check, auto_fill, teardown = Api().get_api_data_by_api_type("json", func, **kwargs)
+            req_method, req_url, req_json, rsp_check, auto_fill, restore = Api().get_api_data_by_api_type("json", func, **kwargs)
             step_context.req_method = req_method
             step_context.req_url = req_url
             step_context.req_json = req_json
             step_context.rsp_check = rsp_check
             step_context.auto_fill = auto_fill
-            step_context.teardown = teardown
+            step_context.api_restore = restore  # API中定义的restore, 在这里重命名位api_restore
 
         elif api_type == "urlencoded":
-            req_method, req_url, req_params, req_json, rsp_check, auto_fill, teardown = \
+            req_method, req_url, req_params, req_json, rsp_check, auto_fill, restore = \
                 Api().get_api_data_by_api_type("urlencoded", func, **kwargs)
             step_context.req_method = req_method
             step_context.req_url = req_url
@@ -187,7 +276,7 @@ class Api:
             step_context.req_json = req_json
             step_context.rsp_check = rsp_check
             step_context.auto_fill = auto_fill
-            step_context.teardown = teardown
+            step_context.api_restore = restore  # API中定义的restore, 在这里重命名为api_restore
         elif api_type == "form_data":
             req_method, req_url, files, data, req_params, rsp_check = \
                 Api().get_api_data_by_api_type("form_data", func, **kwargs)
@@ -199,6 +288,21 @@ class Api:
             step_context.rsp_check = rsp_check
         else:
             raise
+
+    def push_restore_to_script_context(self):
+        """
+        推送到 script_context 之前, 需要根据追加 恢复的标记位
+        """
+        step_context = StepContext()
+        cur_restore = step_context.api_restore
+
+        if cur_restore is not None:  # 如果不是 None, 则追加这个 cur_restore_flag 标志位
+            cur_restore.update({
+                "cur_restore_flag": step_context.cur_restore_flag
+            })
+
+        service_context = ServiceContext()
+        service_context.restore_list.append(cur_restore)
 
     def fill_input_para_to_req_body(self):
         step_context = StepContext()
@@ -280,6 +384,71 @@ class Api:
         step_context.rsp_data = rsp_data
         pass
 
+    def fetch_for_restore(self):
+        """
+        在step_context.cur_restore_flag为 True的情况下, 根据API定义中的信息去响应中提取信息出来, 等在teardown中去清除数据
+        """
+        import jsonpath
+        step_context = StepContext()
+        rsp_data = step_context.rsp_data
+        cur_restore_flag = step_context.cur_restore_flag
+
+        service_context = ServiceContext()
+        restore = service_context.restore_list.pop()
+
+        if cur_restore_flag is True:  # 这里与前面呼应了, 前面push_store的时候, 也默认将None 加进去
+            # 先取出恢复的标记为
+            if restore is None:  # 表示API数据层未定义该相关数据 restore
+                logger.error(
+                    "该关键字在API层未定位restore信息, 即用于恢复的信息, 但是在业务脚本层调用关键字的时候传入restore=True")
+                raise
+            cur_restore_flag = restore["cur_restore_flag"]
+            del restore["cur_restore_flag"]
+
+            # 然后取出恢复函数的相关信息
+            func_name, para = restore.popitem()
+            # 对所有入参进行遍历
+            func_kwargs = {}
+            for para_name, rsp_fetch_expression in para.items():
+                if isinstance(rsp_fetch_expression, str):
+                    json_path_reg = rsp_fetch_expression
+                    extra_change = None
+                elif isinstance(rsp_fetch_expression, list) and len(rsp_fetch_expression) == 2:
+                    json_path_reg = rsp_fetch_expression[0]
+                    extra_change = rsp_fetch_expression[1]
+                else:
+                    logger.error(str(rsp_fetch_expression))
+                    raise
+
+                if "$." in json_path_reg:  # 为正则表达式的时候
+                    try:
+                        fetch_value = jsonpath.jsonpath(rsp_data, json_path_reg)[0]
+                    except:
+                        logger.error(
+                            "使用json_path_reg去响应信息中获取用于restore的信息的时候出错" + str(json_path_reg))
+                        raise
+                else:  # 不是正则表达式的情况, 即为正常的字符串
+                    fetch_value = json_path_reg
+
+                # 对获取到的数据, 做额外的变换操作
+                if extra_change is None:
+                    pass
+                elif extra_change == "to_list":
+                    fetch_value = [fetch_value]
+                elif extra_change == "to_int":
+                    fetch_value = int(fetch_value)
+                else:
+                    logger.error("目前在获取restore的参数值时, 对参数做额外的操作时, 仅支持改成list和int这两种操作")
+                    raise
+
+                func_kwargs.update({para_name: fetch_value})
+
+            restore = {
+                func_name: func_kwargs,
+                "cur_restore_flag": cur_restore_flag
+            }
+            service_context.restore_list.append(restore)
+
     def do_api_default_check(self):
         step_context = StepContext()
         api_type = step_context.api_type
@@ -307,17 +476,10 @@ class Api:
         func = step_context.func
         rsp_data = step_context.rsp_data
         check = step_context.check
-        fetch = step_context.fetch
 
         logger.info(f"========  开始 {func.__name__} 步骤的 业务层主动断言  ========")
-        print("step_context.__dict__", step_context.__dict__)
         service_check_res = ResponseData().check_all_expect(rsp_data, check)
         logger.info(f"========  结束 {func.__name__} 步骤的 业务层主动断言  ========")
-
-        # 做提取信息操作
-        logger.info(f"========  开始 {func.__name__}步骤的 信息提取  ========")
-        ResponseData().fetch_all_value(rsp_data, fetch)
-        logger.info(f"========  结束 {func.__name__}步骤的 信息提取  ========")
 
         step_context.service_check_res = service_check_res
         pass
@@ -339,12 +501,22 @@ class Api:
 
         # 做提取信息操作
         logger.info(f"========  开始 {func.__name__}步骤的 信息提取  ========")
-        ResponseData().fetch_all_value(rsp_data, fetch)
+        ResponseData().rsp_fetch_all_value(rsp_data, fetch)
         logger.info(f"========  结束 {func.__name__}步骤的 信息提取  ========")
 
         pass
 
-    def abstract_api(self, api_type, func, **kwargs):
+    def init_step(self, api_type, func, wrapper, **kwargs):
+        # 重置上下文, 并将当前关键字函数的函数名, 请求类型, 请求参数都更新到上下文中去
+        step_context = StepContext()
+        step_context.reset_all_context()
+        step_context.init_step(api_type, func, **kwargs)  # 将当前测试步骤的信息初始化到步骤上下文中
+
+        # 在业务上下文中 更新运行时链条
+        service_context = ServiceContext()
+        service_context.wrapper = wrapper
+
+    def abstract_api(self, api_type, func, wrapper, **kwargs):
         """
         抽象API, 即描述各个API的操作前后的所有行为, 包括, APi数据获取, 入参填充, 实际请求, 断言, 提取在响应信息, 日志等
         :param api_type:
@@ -352,13 +524,15 @@ class Api:
         :param kwargs:
         :return:
         """
+        # 重置测试步骤的所有上下文信息 并初始化
+        self.init_step(api_type, func, wrapper, **kwargs)
+
+        # 获取 retry 尝试次数的 标志位, 并做相关处理
+        if self.get_retry_and_do_retry():
+            return True
+
         logger.info("\n\n")
         logger.info(f"================  开始 测试步骤 {func.__name__} 测试步骤  ================")
-
-        # 重置测试步骤的所有上下文信息 并初始化
-        step_context = StepContext()
-        step_context.reset_all_context()
-        step_context.init_step(api_type, func, **kwargs)  # 将当前测试步骤的信息初始化到步骤上下文中
 
         # 将fetch从kwargs中提取出来
         self.get_fetch()
@@ -366,8 +540,14 @@ class Api:
         # 将check关键字从kwargs中提取出来
         self.get_check()
 
+        # 将restore关键字从kwargs中提取出来
+        self.get_restore()
+
         # 获取Api数据层的相关数据
         self.get_api_data()
+
+        # 将restore信息追加到 service_context中
+        self.push_restore_to_script_context()
 
         # 将业务脚本层的入参填充到请求体中
         self.fill_input_para_to_req_body()
@@ -375,14 +555,18 @@ class Api:
         # 做实际请求
         self.do_real_request()
 
+        # 根据 restore 中的信息去做fetch
+        self.fetch_for_restore()
+
         # API数据层的默认断言
         self.do_api_default_check()
 
         # 业务层的主动断言
         self.do_service_check()
 
+        # 业务脚本层的信息提取
+        self.do_service_fetch()
         logger.info(f"================  结束 测试步骤 {func.__name__} 测试步骤  ================")
-
         return self.get_step_check_res()
 
 
@@ -390,7 +574,7 @@ class Api:
     def json(self, func):
         def wrapper(**kwargs):
             """我是wrapper的注释"""
-            step_check_res = Api().abstract_api("json", func, **kwargs)
+            step_check_res = Api().abstract_api("json", func, wrapper, **kwargs)
             return step_check_res
 
         return wrapper
@@ -399,8 +583,7 @@ class Api:
     def urlencoded(self, func):
         def wrapper(**kwargs):
             """我是wrapper的注释"""
-            step_check_res = Api().abstract_api("urlencoded", func, **kwargs)
-            print("step_check_res", step_check_res)
+            step_check_res = Api().abstract_api("urlencoded", func, wrapper, **kwargs)
             return step_check_res
 
         return wrapper
@@ -409,8 +592,19 @@ class Api:
     def form_data(self, func):
         def wrapper(**kwargs):
             """我是wrapper的注释"""
-            step_check_res = Api().abstract_api("form_data", func, **kwargs)
-            print("step_check_res", step_check_res)
+            step_check_res = Api().abstract_api("form_data", func, wrapper, **kwargs)
             return step_check_res
 
         return wrapper
+
+
+service_context = ServiceContext()
+config = service_context.config
+
+__all__ = [
+    "Api",  # 常用API
+    "ComplexApi",  # 复合 APi
+    "allure",  # 报告
+    "register",  # 注册器
+    "config",  # 全局配置
+]
