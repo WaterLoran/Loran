@@ -1,0 +1,7 @@
+user:
+  autotest:
+    name: autotest
+    password: autotest
+  autotest_2:
+    name: autotest_2
+    password: autotest_2
