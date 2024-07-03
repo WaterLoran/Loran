@@ -27,13 +27,28 @@ setup(
         "colorlog==6.8.0",
         "allure-pytest==2.13.2",
         "seleniumbase==4.22.5",
-        "xlrd==2.0.1"
+        "xlrd==2.0.1",
+        "fire==0.6.0",
+        "PyMySQL==1.1.1",
+        "jsonpath==0.82.2"
     ],
-    packages=find_packages(include=['core', 'core.*'], exclude=['common', 'common.*']),  # 自动查找包, 当前这种写法, 会导入多余的目录common
+    packages=find_packages(include=['loran', 'loran.*'], exclude=['common', 'common.*']),  # 自动查找包, 当前这种写法, 会导入多余的目录common
     # package_dir={'': '.'},          # 指定包目录
+    package_data={
+        'LoranTest': [
+            'loran/scaffold/files/*',
+            'loran/scaffold/cases/*',
+            'loran/scaffold/config/*',
+        ],
+    },
     py_modules=[''],
     include_package_data=True,
     zip_safe=False,
+    entry_points={
+        'console_scripts': [
+            'lorantest = loran.cmdline:main'  # lorantest 即为命令名称
+        ]
+    },
     keywords=['Test', "AutoTest", "automated testing", "测试", "自动化测试"],
     classifiers=['Topic :: Autotest',
                  'Natural Language :: Chinese (Simplified)',
@@ -50,4 +65,4 @@ setup(
 #  打包命令: python setup.py sdist bdist_wheel
 # 然后将文件覆盖到D:\EprosTest\venv\Scripts目录下, 然后执行pip安装
 
-# MANIFEST.in  用于描述, 所要排除的目录, 并且要同时结合packages=find_packages(include=['core', 'core.*'], exclude=['common', 'common.*'])
+# MANIFEST.in  用于描述, 所要排除的目录, 并且要同时结合packages=find_packages(include=['loran', 'loran.*'], exclude=['common', 'common.*'])

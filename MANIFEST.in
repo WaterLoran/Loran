@@ -1,3 +1,6 @@
 prune common
 prune config
 prune pages
+include core/scaffold/files/*
+include core/scaffold/cases/*
+include core/scaffold/config/*
