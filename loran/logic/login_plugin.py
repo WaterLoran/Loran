@@ -1,11 +1,11 @@
 import pluggy
 
 # 定义一个Pluggy插件管理器
-pm = pluggy.PluginManager("lorantest")
+pm = pluggy.PluginManager("loran")
 
 # 定义一个钩子规范
-hookspec = pluggy.HookspecMarker("lorantest")
-hookimpl = pluggy.HookimplMarker("lorantest")
+hookspec = pluggy.HookspecMarker("loran")
+hookimpl = pluggy.HookimplMarker("loran")
 
 # 定义一个钩子规范类
 class MySpec:

@@ -2,7 +2,7 @@
 
 Usage:
     将脚手架拷贝到工程目录
-    lorantest [--dir="E:\your_project_dir"]
+    loran [--dir="E:\your_project_dir"]
 
 """
 import os
@@ -55,18 +55,18 @@ def copy_scaf_dir_to_prj_dir(prj_dir):
 
 
 
-class Lorantest:
+class Loran:
     def init(self, prj_dir):
         """初始化工程"""
         print("正在初始化工程... \n")
         copy_scaf_dir_to_prj_dir(prj_dir)
-        print("casese目录和files目录下的 __init__.py文件 可以移除\n")
+        print("cases 目录和files目录下的 __init__.py文件 可以移除\n")
         print("初始化工程完成! 恭喜你, 即将踏入奇妙的自动化测试之旅")
 
 
 def main():
-    """Lorantest 命令行工具的入口"""
-    fire.Fire(Lorantest)
+    """Loran 命令行工具的入口"""
+    fire.Fire(Loran)
 
 
 

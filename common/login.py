@@ -4,7 +4,7 @@ from loran.context import ServiceContext
 from loran.ruoyi_error import RuoyiError
 from loran.logger.logger_interface import logger
 
-hookimpl = pluggy.HookimplMarker("lorantest")  # 固定写法, 这里表示根据 lorantest 这个标识符来实例化一个 hookimpl
+hookimpl = pluggy.HookimplMarker("loran")  # 固定写法, 这里表示根据 loran 这个标识符来实例化一个 hookimpl
 
 
 class LoginPlugin:
@@ -51,7 +51,8 @@ class LoginPlugin:
                 rsp_json = rsp.json()
                 token = rsp_json["token"]
             except:
-                raise RuoyiError("failed_to_obtain_token", username=username, password=password)
+                logger.error(f"登录失败, 账号密码信息为, {username} / {password}")
+                raise
 
             logger.debug("token信息::" + token)
 

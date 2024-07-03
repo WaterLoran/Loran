@@ -7,7 +7,7 @@ from setuptools import setup, find_packages
 here = os.path.abspath(os.path.dirname(__file__))
 
 setup(
-    name='LoranTest',  # 虽然这个名字为RuoyiTest, 但是 这个库还是以LoranTest来命名
+    name='loran',  # 虽然这个名字为RuoyiTest, 但是 这个库还是以Loran来命名
     version='1.0',
     author='WaterLoran',
     author_email='1696746432@qq.com',
@@ -35,9 +35,9 @@ setup(
     packages=find_packages(include=['loran', 'loran.*'], exclude=['common', 'common.*']),  # 自动查找包, 当前这种写法, 会导入多余的目录common
     # package_dir={'': '.'},          # 指定包目录
     package_data={
-        'LoranTest': [
-            'loran/scaffold/files/*',
+        'loran': [
             'loran/scaffold/cases/*',
+            'loran/scaffold/files/*',
             'loran/scaffold/config/*',
         ],
     },
@@ -46,7 +46,7 @@ setup(
     zip_safe=False,
     entry_points={
         'console_scripts': [
-            'lorantest = loran.cmdline:main'  # lorantest 即为命令名称
+            'loran = loran.cmdline:main'  # loran 即为命令名称
         ]
     },
     keywords=['Test', "AutoTest", "automated testing", "测试", "自动化测试"],
