@@ -41,7 +41,9 @@ setup(
             'loran/scaffold/config/*',
         ],
     },
-    py_modules=[''],
+    # include loran/scaffold/files/*
+    # include loran/scaffold/config/*
+    # include loran/scaffold/cases/*
     include_package_data=True,
     zip_safe=False,
     entry_points={
@@ -58,11 +60,3 @@ setup(
                  'License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)',
                  'Programming Language :: Python :: 3.9.7'],
 )
-# 先安装 setuptools, wheel 这两个库, 然后, 在setup.py 这个文件夹目录下,
-# 启动控制台来执行 打包命令, 然后再dist目录找到 whl结尾的文件去安装
-# pip install setuptools
-# pip install wheel
-#  打包命令: python setup.py sdist bdist_wheel
-# 然后将文件覆盖到D:\EprosTest\venv\Scripts目录下, 然后执行pip安装
-
-# MANIFEST.in  用于描述, 所要排除的目录, 并且要同时结合packages=find_packages(include=['loran', 'loran.*'], exclude=['common', 'common.*'])

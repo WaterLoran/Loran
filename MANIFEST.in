@@ -1,7 +1,5 @@
 prune common
 prune config
 prune pages
-include loran/scaffold/files/*
-include loran/scaffold/config/*
-include loran/scaffold/cases/*
+
 
