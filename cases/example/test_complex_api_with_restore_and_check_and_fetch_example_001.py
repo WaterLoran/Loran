@@ -5,7 +5,7 @@ from common.ruoyi_logic import *
 class TestComplexApiWithRestoreAndCheckAndFetchExample001:
     """
     """
-    def setup(self):
+    def setup_method(self):
         pass
 
     def test_complex_api_with_restore_and_check_and_fetch_example_001(self):
@@ -36,5 +36,5 @@ class TestComplexApiWithRestoreAndCheckAndFetchExample001:
 
         print("==== reg.user_id", reg.user_id)  # 这里表示确实可以fetch到
 
-    def teardown(self):
+    def teardown_method(self):
         pass

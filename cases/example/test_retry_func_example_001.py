@@ -7,7 +7,7 @@ class TestRetryFuncExample001:
     使用 retry 功能的例子
     """
 
-    def setup(self):
+    def setup_method(self):
         pass
 
     def test_retry_func_example_001(self):
@@ -33,5 +33,5 @@ class TestRetryFuncExample001:
             restore=True
         )
 
-    def teardown(self):
+    def teardown_method(self):
         pass

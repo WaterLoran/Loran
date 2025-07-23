@@ -19,6 +19,9 @@ def add_user(userName="", nickName="", password=""):
         "postIds": [],  # 岗位ID
         "roleIds": []  # 角色
     }
+    rsp_field = {
+        "msg": {"jsonpath": "$.msg"}
+    }
     rsp_check = {
         "msg": "操作成功",
         "code": 200,

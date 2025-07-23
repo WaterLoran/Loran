@@ -6,7 +6,7 @@ excel断言的示例脚本
 """
 
 class TestExcelAssert001(object):
-    def setup(self):
+    def setup_method(self):
         pass
 
 
@@ -190,5 +190,5 @@ class TestExcelAssert001(object):
             }
         )
 
-    def teardown(self):
+    def teardown_method(self):
         pass

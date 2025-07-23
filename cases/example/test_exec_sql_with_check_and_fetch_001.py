@@ -7,7 +7,7 @@ class TestExecSqlWithCheckAndFetch001:
     执行sql语句的例子
     """
 
-    def setup(self):
+    def setup_method(self):
         pass
 
     def test_exec_sql_with_check_and_fetch_001(self):
@@ -43,5 +43,5 @@ class TestExecSqlWithCheckAndFetch001:
         )
 
 
-    def teardown(self):
+    def teardown_method(self):
         pass

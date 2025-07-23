@@ -3,7 +3,7 @@ from common.ruoyi_logic import *
 
 
 class TestAddUser998:
-    def setup(self):
+    def setup_method(self):
         pass
 
     def test_add_user_998(self):
@@ -35,7 +35,7 @@ class TestAddUser998:
         print("config==>", config.user.autotest)
 
 
-    def teardown(self):
+    def teardown_method(self):
         # 删除用户
         rmv_user(
             userId=self.reg.user_id,

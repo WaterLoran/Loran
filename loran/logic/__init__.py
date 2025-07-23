@@ -9,9 +9,8 @@ from .response_data import ResponseData
 from loran.logger import LoggerManager
 from loran.ruoyi_error import RuoyiError
 from .complex_api import ComplexApi
-from loran.context import ServiceContext
 from easydict import EasyDict as register
-
+from loran.context import *
 
 logger = LoggerManager().get_logger("main")
 
@@ -41,69 +40,6 @@ class SingletonMeta(type):
         return cls._instances[cls]
 
 
-class StepContext(metaclass=SingletonMeta):
-    """
-    用于记录一个测试步骤的上下文信息, 每个关键字第一次调用时置空上下文, 并将自己的原始原始信息存入
-    """
-
-    def __init__(self):
-        self.api_type = ""  # 请求的类型
-        self.func = ""  # 测试步骤的说调用的函数名
-        self.func_kwargs = {}  # 关键字调用时候的入参
-        self.unprocessed_kwargs = {}  # 请用于存放未处理的入参, 过程中会发生变化
-
-        self.check = None  # 断言信息
-        self.fetch = None  # 提取响应信息的表达式
-
-        self.req_method = None
-        self.req_url = None
-        self.req_json = None
-        self.rsp_check = None
-        self.auto_fill = None
-        self.req_params = None
-        self.req_json = None
-        self.auto_fill = None
-        self.files = None
-        self.data = None
-
-        self.rsp_data = None  # 可能为rsp_json, 也可能是rsp.__dict__
-        self.default_check_res = None
-
-        self.api_restore = None
-        self.cur_restore_flag = False
-
-    def reset_all_context(self):
-        self.api_type = ""  # 请求的类型
-        self.func = ""  # 测试步骤的说调用的函数名
-        self.func_kwargs = {}  # 关键字调用时候的入参
-        self.unprocessed_kwargs = {}  # 请用于存放未处理的入参, 过程中会发生变化
-
-        self.check = None  # 断言信息
-        self.fetch = None  # 提取响应信息的表达式
-
-        self.req_method = None
-        self.req_url = None
-        self.req_json = None
-        self.rsp_check = None
-        self.auto_fill = None
-        self.req_params = None
-        self.req_json = None
-        self.auto_fill = None
-        self.files = None
-        self.data = None
-
-        self.rsp_data = None  # 可能为rsp_json, 也可能是rsp.__dict__
-        self.default_check_res = None
-
-        self.api_restore = None
-        self.cur_restore_flag = False
-
-    def init_step(self, api_type, func, **kwargs):
-        self.api_type = api_type  # 请求的类型
-        self.func = func  # 测试步骤的说调用的函数名
-        self.func_kwargs = copy.deepcopy(kwargs)  # 关键字调用时候的入参
-        self.unprocessed_kwargs = kwargs
-
 
 class Api:
     def __init__(self):
@@ -122,7 +58,7 @@ class Api:
         # 描述各类型请求的必须信息和非必须信息
         api_type_field = {
             # Api类型: 必须要有的
-            "json": [["req_method", "req_url", "req_json"], ["rsp_check", "auto_fill", "restore"]],
+            "json": [["req_method", "req_url", "req_json"], ["rsp_check", "auto_fill", "restore", "rsp_field"]],
             "urlencoded": [["req_method", "req_url", "req_params"], ["req_json", "rsp_check", "auto_fill", "restore"]],
             "form_data": [["req_method", "req_url"], ["files", "data", "req_params", "rsp_check"]],
         }
@@ -259,13 +195,15 @@ class Api:
         kwargs = step_context.unprocessed_kwargs
 
         if api_type == "json":
-            req_method, req_url, req_json, rsp_check, auto_fill, restore = Api().get_api_data_by_api_type("json", func, **kwargs)
+            req_method, req_url, req_json, rsp_check, auto_fill, restore, rsp_field\
+                = Api().get_api_data_by_api_type("json", func, **kwargs)
             step_context.req_method = req_method
             step_context.req_url = req_url
             step_context.req_json = req_json
             step_context.rsp_check = rsp_check
             step_context.auto_fill = auto_fill
             step_context.api_restore = restore  # API中定义的restore, 在这里重命名位api_restore
+            step_context.rsp_field = rsp_field
 
         elif api_type == "urlencoded":
             req_method, req_url, req_params, req_json, rsp_check, auto_fill, restore = \

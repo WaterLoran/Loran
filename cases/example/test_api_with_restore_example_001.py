@@ -5,7 +5,7 @@ from common.ruoyi_logic import *
 class TestApiWithRestoreExample001:
     """
     """
-    def setup(self):
+    def setup_method(self):
         pass
 
     def test_api_with_restore_example_001(self):
@@ -32,5 +32,5 @@ class TestApiWithRestoreExample001:
             restore=True
         )
 
-    def teardown(self):
+    def teardown_method(self):
         pass

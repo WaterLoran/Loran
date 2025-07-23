@@ -40,7 +40,7 @@ class TestAddUserUi(RuoYiUicase):
             confirm_button="click"
         )
 
-    def tearDown(self):
+    def teardown_method(self):
         super().tearDown()
         pass
 

@@ -3,7 +3,7 @@ from loran.ruoyi_error import RuoyiError
 from loran.logger.logger_interface import logger
 import json
 import jsonpath
-
+from loran.context import *
 
 def compare_action(compared_obj, compare_type, target):
     if compare_type == "equal":
@@ -130,10 +130,72 @@ def check_json_all_expect(rsp_data, check):
     # 依次对各个断言进行操作
     all_check_res = True
     for each_check in check:
+        each_check = rebuild_check_expression(each_check)
         one_check_res = check_json_with_one_expect(rsp_data, each_check)
         if one_check_res is False:
             all_check_res = False
     return all_check_res
+
+
+
+def rebuild_fetch_expression(self, expression):
+    step_context = StepContext()
+    rsp_field = step_context.rsp_field
+
+    if len(expression) == 4:
+        # 暂时不处理长度为 4 # TODO 待开发
+        raise
+
+    if len(expression) == 3:
+        fetch_str = expression[2] # 3个长度的时候
+        if "$." not in fetch_str:
+            if rsp_field is not None:  # 存在rsp_field 的情况才去处理
+                if fetch_str in rsp_field.keys():
+                    field_info = rsp_field.get(fetch_str)
+                    if "jsonpath" in field_info:
+                        jsonpath_expression = field_info["jsonpath"]
+                        expression[2] = jsonpath_expression
+
+    return expression
+
+def rebuild_check_expression(expression):
+    step_context = StepContext()
+    rsp_field = step_context.rsp_field
+
+    if len(expression) == 4:
+        # 暂时不处理长度为 4 # TODO 待开发
+        raise
+
+    if len(expression) == 3:
+        check_str = expression[0]  # 3个长度的时候
+        if "$." not in check_str:
+            if rsp_field is not None: # 如果Api中定义了这个数据
+                if check_str in rsp_field.keys():
+                    field_info = rsp_field.get(check_str)
+                    if "jsonpath" in field_info:
+                        jsonpath_expression = field_info["jsonpath"]
+                        expression[0] = jsonpath_expression
+
+    return expression
+
+def get_jsonpath_expression_from_rsp_field(key):
+    """
+    如果传入的不是 $. 开头的, 那么如果不是不同的key, 那就是 在rsp_field中有定义
+    """
+
+    key_res = None
+    step_context = StepContext()
+    rsp_field = step_context.rsp_field
+    if key in rsp_field.keys():
+        key_info = rsp_field[key]
+        if "jsonpath" in key_info.keys():
+            jsonpath_expression = key_info["jsonpath"]
+            key_res = jsonpath_expression
+
+    if key_res is not None:
+        return key_res
+    else:
+        return key
 
 
 __all__ = [

@@ -3,7 +3,7 @@ from common.ruoyi_logic import *
 
 
 class TestRoleManagementLifecycle001:
-    def setup(self):
+    def setup_method(self):
         pass
 
     def test_role_management_lifecycle_001(self):
@@ -35,7 +35,7 @@ class TestRoleManagementLifecycle001:
             ]
         )
 
-    def teardown(self):
+    def teardown_method(self):
         reg = self.reg
 
         # 删除角色

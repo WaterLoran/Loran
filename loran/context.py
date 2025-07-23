@@ -1,3 +1,5 @@
+import copy
+
 class SingletonMeta(type):
     """
     功能: 实现一个单例模式的基类,只要子类集成这个类即可实现单例模式
@@ -69,3 +71,73 @@ class ServiceContext(metaclass=SingletonMeta):
 
     def get_last_api_login_user(self):
         return self.last_api_login_user
+
+
+class StepContext(metaclass=SingletonMeta):
+    """
+    用于记录一个测试步骤的上下文信息, 每个关键字第一次调用时置空上下文, 并将自己的原始原始信息存入
+    """
+
+    def __init__(self):
+        self.api_type = ""  # 请求的类型
+        self.func = ""  # 测试步骤的说调用的函数名
+        self.func_kwargs = {}  # 关键字调用时候的入参
+        self.unprocessed_kwargs = {}  # 请用于存放未处理的入参, 过程中会发生变化
+
+        self.check = None  # 断言信息
+        self.fetch = None  # 提取响应信息的表达式
+
+        self.req_method = None
+        self.req_url = None
+        self.req_json = None
+        self.rsp_check = None
+        self.auto_fill = None
+        self.req_params = None
+        self.req_json = None
+        self.auto_fill = None
+        self.files = None
+        self.data = None
+
+        self.rsp_data = None  # 可能为rsp_json, 也可能是rsp.__dict__
+        self.default_check_res = None
+
+        self.api_restore = None
+        self.cur_restore_flag = False
+
+        self.req_field = None
+        self.rsp_field = None
+
+    def reset_all_context(self):
+        self.api_type = ""  # 请求的类型
+        self.func = ""  # 测试步骤的说调用的函数名
+        self.func_kwargs = {}  # 关键字调用时候的入参
+        self.unprocessed_kwargs = {}  # 请用于存放未处理的入参, 过程中会发生变化
+
+        self.check = None  # 断言信息
+        self.fetch = None  # 提取响应信息的表达式
+
+        self.req_method = None
+        self.req_url = None
+        self.req_json = None
+        self.rsp_check = None
+        self.auto_fill = None
+        self.req_params = None
+        self.req_json = None
+        self.auto_fill = None
+        self.files = None
+        self.data = None
+
+        self.rsp_data = None  # 可能为rsp_json, 也可能是rsp.__dict__
+        self.default_check_res = None
+
+        self.api_restore = None
+        self.cur_restore_flag = False
+
+        self.req_field = None
+        self.rsp_field = None
+
+    def init_step(self, api_type, func, **kwargs):
+        self.api_type = api_type  # 请求的类型
+        self.func = func  # 测试步骤的说调用的函数名
+        self.func_kwargs = copy.deepcopy(kwargs)  # 关键字调用时候的入参
+        self.unprocessed_kwargs = kwargs
