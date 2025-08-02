@@ -29,6 +29,26 @@ def compare_action(compared_obj, compare_type, target):
     else:
         raise
 
+    if pytest_check_result:
+        logger.debug("pytest_check断言为True")
+        assert_res = True
+    else:
+        logger.error("pytest_check断言为False")
+        assert_res = False
+    if assert_res:
+        logger.debug(
+            "\n    真实指定的响应对象为 {}, 类型为{}\n    比较方式为 {},\n    期望对象        为 {}, 类型为{}".format
+            (compared_obj, type(compared_obj), compare_type, target, type(target)))
+    else:
+        if compare_type in ["length_greater", "length_smaller", "length_equal"]:  # 如果比较类型比较特殊, 比如为比较长度的 则另外打印日志
+            logger.error(
+                "\n    真实指定的响应对象长度为 {}, \n    比较方式为 {},\n    期望对象长度        为 {}".format
+                (len(compared_obj), compare_type, target))
+        else:
+            logger.error(
+                "\n    真实指定的响应对象为 {}, 类型为{}\n    比较方式为 {},\n    期望对象        为 {}, 类型为{}".format
+                (compared_obj, type(compared_obj), compare_type, target, type(target)))
+
     return pytest_check_result
 
 
@@ -137,8 +157,7 @@ def check_json_all_expect(rsp_data, check):
     return all_check_res
 
 
-
-def rebuild_fetch_expression(self, expression):
+def rebuild_fetch_expression(expression):
     step_context = StepContext()
     rsp_field = step_context.rsp_field
 

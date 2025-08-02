@@ -1,4 +1,5 @@
 import jsonpath
+from loran.check import rebuild_fetch_expression
 from loran.logger.logger_interface import logger
 
 
@@ -31,4 +32,5 @@ def fetch_json_all_value(rsp_data, fetch):
         fetch = [fetch]
 
     for each_fetch in fetch:
+        each_fetch = rebuild_fetch_expression(each_fetch)
         fetch_json_one_value(rsp_data, each_fetch)

@@ -38,6 +38,9 @@ def lst_user():
         "pageNum": 1,
         "pageSize": 10
     }
+    rsp_field = {
+        "msg": {"jsonpath": "$.msg"}
+    }
     return locals()
 
 

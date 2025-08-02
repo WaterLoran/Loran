@@ -59,7 +59,7 @@ class Api:
         api_type_field = {
             # Api类型: 必须要有的
             "json": [["req_method", "req_url", "req_json"], ["rsp_check", "auto_fill", "restore", "rsp_field"]],
-            "urlencoded": [["req_method", "req_url", "req_params"], ["req_json", "rsp_check", "auto_fill", "restore"]],
+            "urlencoded": [["req_method", "req_url", "req_params"], ["req_json", "rsp_check", "auto_fill", "restore", "rsp_field"]],
             "form_data": [["req_method", "req_url"], ["files", "data", "req_params", "rsp_check"]],
         }
         required_para = api_type_field[api_type][0]
@@ -206,7 +206,7 @@ class Api:
             step_context.rsp_field = rsp_field
 
         elif api_type == "urlencoded":
-            req_method, req_url, req_params, req_json, rsp_check, auto_fill, restore = \
+            req_method, req_url, req_params, req_json, rsp_check, auto_fill, restore, rsp_field = \
                 Api().get_api_data_by_api_type("urlencoded", func, **kwargs)
             step_context.req_method = req_method
             step_context.req_url = req_url
@@ -215,6 +215,7 @@ class Api:
             step_context.rsp_check = rsp_check
             step_context.auto_fill = auto_fill
             step_context.api_restore = restore  # API中定义的restore, 在这里重命名为api_restore
+            step_context.rsp_field = rsp_field
         elif api_type == "form_data":
             req_method, req_url, files, data, req_params, rsp_check = \
                 Api().get_api_data_by_api_type("form_data", func, **kwargs)

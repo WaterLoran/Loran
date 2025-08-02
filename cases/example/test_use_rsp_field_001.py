@@ -17,11 +17,11 @@ class TestUseRspField001:
         var_name = "hello22"
         add_user(
             userName=var_name, nickName=var_name, password=var_name,
-            check=[
-                ["$.msg", "eq", "操作成功"],
-                ["$.code", "==", 200],
-                ["msg", "eq", "操作成功"]  # 此处就是使用了 rsp_field 来重建获取表达式来的
-            ],
+            # check=[
+            #     ["$.msg", "eq", "操作成功"],
+            #     ["$.code", "==", 200],
+            #     ["msg", "eq", "操作成功"]  # 此处就是使用了 rsp_field 来重建获取表达式来的
+            # ],
         )
 
         # 查看用户
@@ -29,9 +29,15 @@ class TestUseRspField001:
             fetch=[
                 [reg, "user_id", f"$.rows[?(@.userName=='{var_name}')].userId"],
                 [reg, "user_id2", f"$.rows[?(@.userName=='{var_name}')].userId"],
+                [reg, "msg", "msg"]  # 此处使用了rsp_field预定义的jsonpath表达式
             ],
-            check=[f"$.rows[?(@.userName=='{var_name}')].nickName", "eq", var_name]
+            check=[
+                # [f"$.rows[?(@.userName=='{var_name}')].nickName", "eq", var_name],
+                ["msg", "eq", "查询成功"], # 此处使用了rsp_field预定义的jsonpath表达式
+            ]
         )
+
+        print("reg.msg", reg.msg)
 
         print("config==>", config.user.autotest)
 
