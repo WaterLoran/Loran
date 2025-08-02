@@ -119,6 +119,20 @@ class Api:
 
         step_context.cur_restore_flag = restore
 
+    def get_req_json(self):
+        """
+        获取业务接口间上下文信息, 即通常为lst皆苦所查询到的信息
+        """
+        step_context = StepContext()
+        t_kwargs = step_context.unprocessed_kwargs
+
+        req_json_script = None
+        if "req_json" in t_kwargs.keys():
+            req_json_script = t_kwargs["req_json"]
+            del t_kwargs["req_json"]
+
+        step_context.req_json_script = req_json_script
+
     def do_retry_logic(self):
         service_context = ServiceContext()
         step_context = StepContext()
@@ -227,6 +241,29 @@ class Api:
             step_context.rsp_check = rsp_check
         else:
             raise
+
+    def fill_req_json_script_to_req_body(self):
+        """
+        将业务脚本层传入的参数填充到请求体中去
+        """
+        step_context = StepContext()
+        api_type = step_context.api_type
+        req_json = step_context.req_json
+        req_json_script = step_context.req_json_script
+
+        if req_json_script:  # 如果传入的 context_input 不为空, 则对其进行填充
+            if api_type == "json":
+                req_json = RequestData().fill_context_into_req_json(req_json_script, req_json)
+                step_context.req_json = req_json
+            elif api_type == "urlencoded":
+                # 暂时不处理该场景, 仅处理json类型的请求
+                raise
+            else:
+                raise
+                # 暂时不处理该场景, 仅处理json类型的请求
+        else:
+            # 该logic调用未传入context, 不做处理
+            pass
 
     def push_restore_to_script_context(self):
         """
@@ -482,8 +519,14 @@ class Api:
         # 将restore关键字从kwargs中提取出来
         self.get_restore()
 
+        # 尝试从业务脚本层获取req_json
+        self.get_req_json()
+
         # 获取Api数据层的相关数据
         self.get_api_data()
+
+        # 将业务脚本层的 req_json 与API定义中的 req_json 合并
+        self.fill_req_json_script_to_req_body()
 
         # 将restore信息追加到 service_context中
         self.push_restore_to_script_context()

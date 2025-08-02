@@ -1,7 +1,7 @@
 import jsonpath
 from loran.logger import LoggerManager
 from loran.ruoyi_error import RuoyiError
-
+from .json_data import JsonData
 
 logger = LoggerManager().get_logger("main")
 
@@ -76,3 +76,12 @@ class RequestData:
         logger.info("<<<<<<<<<<<<<<<<  入参填充-结束\n")
         return self.req_body
 
+
+    def fill_context_into_req_json(self, context_input, req_json):
+        """
+        req_json: 原logic中定义的请求体
+        context_input: 业务脚本层中传入的上下文信息
+        """
+        json_data = JsonData()
+        req_json = json_data.merge_a_dict_into_b_dict(context_input, req_json)
+        return req_json
