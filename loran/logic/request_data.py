@@ -1,6 +1,8 @@
 import jsonpath
+import copy
 from loran.logger import LoggerManager
 from loran.ruoyi_error import RuoyiError
+from loran.context import StepContext
 from .json_data import JsonData
 
 logger = LoggerManager().get_logger("main")
@@ -85,3 +87,47 @@ class RequestData:
         json_data = JsonData()
         req_json = json_data.merge_a_dict_into_b_dict(context_input, req_json)
         return req_json
+
+    def modify_by_field_define(self, json_dict, **kwargs):
+        # 根据传入的field字段名称, 去从 kwargs 去移除
+        step_context = StepContext()
+        field_define = step_context.req_field
+
+        t_json = copy.deepcopy(json_dict)
+
+        to_rmv_key_list = []
+
+        for key, value in kwargs.items():
+            try:
+                fill_jsonpath = field_define[key]["jsonpath"] # 这里如果娶不到这个key, 则直接跳过
+
+                # 如果传入的是普通参数, 则直接复制进去, 需要先判断
+                # 否则就需要去依赖于生成器去生成数据
+
+                # TODO 这里待编写 generator 函数来生成相关数据
+                # generator = field_define[key]["generator"]
+                # need_generate = need_to_generate_data(value)
+                # if need_generate:
+                #     if generator is None:
+                #         logger.error("需要使用generator来生成数据, 但是却没有定义")
+                #         raise
+                #     value= generator_data_entry(generator, value) # 传入业务脚本层的字段的值
+                #     print("")
+
+                t_json = JsonData().update_dict_by_jsonpath(
+                    data=t_json,
+                    jsonpath_expr=fill_jsonpath,
+                    new_value=value
+                )
+
+                # 使用 field 的信息去填充信息后, 需要将该key从kwargs 中移除, 从而不影响后面的自动填充
+                to_rmv_key_list.append(key)
+            except:
+                # TODO 实际是 使用 lst 查看部门的时候, 抛出异常了, 然后, 就跳到这里了
+                logger.debug(f"{key} 入参 在 field 中找不到 jsonpath表达式, 将尝试使用 自动填充方式去填充")
+
+        # 移除那些已经根据 field 去填充进入 json体的key
+        for key in to_rmv_key_list:
+            del kwargs[key]
+
+        return t_json, kwargs

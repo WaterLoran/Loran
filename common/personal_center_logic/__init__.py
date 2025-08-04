@@ -3,7 +3,7 @@ from loran.logic import *
 
 @Api.form_data
 @allure.step("修改用户头像")
-def mod_profile_picture(picture="猞猁.png"):
+def mod_profile_picture(picture="猞猁.png", **kwargs):
     req_url = "/dev-api/system/user/profile/avatar"
     req_method = "POST"
     files = {"avatarfile": picture}

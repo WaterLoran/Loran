@@ -3,7 +3,7 @@ from loran.logic import *
 
 @Api.json
 @allure.step("添加用户-add_user")
-def add_user(userName="", nickName="", password=""):
+def add_user(userName="", nickName="", password="", **kwargs):
     req_url = "/dev-api/system/user"
     req_method = "POST"
     req_json = {

@@ -58,7 +58,7 @@ class Api:
         # 描述各类型请求的必须信息和非必须信息
         api_type_field = {
             # Api类型: 必须要有的
-            "json": [["req_method", "req_url", "req_json"], ["rsp_check", "auto_fill", "restore", "rsp_field"]],
+            "json": [["req_method", "req_url", "req_json"], ["rsp_check", "auto_fill", "restore", "req_field", "rsp_field"]],
             "urlencoded": [["req_method", "req_url", "req_params"], ["req_json", "rsp_check", "auto_fill", "restore", "rsp_field"]],
             "form_data": [["req_method", "req_url"], ["files", "data", "req_params", "rsp_check"]],
         }
@@ -209,7 +209,7 @@ class Api:
         kwargs = step_context.unprocessed_kwargs
 
         if api_type == "json":
-            req_method, req_url, req_json, rsp_check, auto_fill, restore, rsp_field\
+            req_method, req_url, req_json, rsp_check, auto_fill, restore, req_field, rsp_field\
                 = Api().get_api_data_by_api_type("json", func, **kwargs)
             step_context.req_method = req_method
             step_context.req_url = req_url
@@ -218,6 +218,7 @@ class Api:
             step_context.auto_fill = auto_fill
             step_context.api_restore = restore  # API中定义的restore, 在这里重命名位api_restore
             step_context.rsp_field = rsp_field
+            step_context.req_field = req_field
 
         elif api_type == "urlencoded":
             req_method, req_url, req_params, req_json, rsp_check, auto_fill, restore, rsp_field = \
@@ -286,11 +287,19 @@ class Api:
         auto_fill = step_context.auto_fill
         func = step_context.func
         req_json = step_context.req_json
+        req_field = step_context.req_field
         req_params = step_context.req_params
         kwargs = step_context.unprocessed_kwargs
 
         logger.debug(f"做入参填充时接口类型是 {api_type}")
         if api_type == "json":
+
+            # 先判断有无 field, 只要有都会去根据fill_loca去填充, 因为这个是精确信息, 是高效的
+            if req_field is not None:  # 如果 定义了fill_loca, 则先试用fill_loca来填充, 再对剩余参数使用自动填充方式
+                # 这里填充后还要将更新后的kwargs回传
+                req_json, kwargs = RequestData().modify_by_field_define(req_json, **kwargs)
+                step_context.req_json = req_json
+
             if auto_fill is not False:  # 为False的时候, 不做填充
                 req_json = RequestData().modify_req_body(req_json, **kwargs)
                 step_context.req_json = req_json  # 将信息更新回上下文中

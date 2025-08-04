@@ -4,7 +4,7 @@ import allure
 
 
 @allure.step("切换用户")
-def switch_to_user(user="admin"):
+def switch_to_user(user="admin", **kwargs):
     api = BaseApi()
     api.update_token(user=user)
 

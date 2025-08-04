@@ -3,7 +3,7 @@ from loran.logic import *
 
 @Api.json
 @allure.step("添加用户-add_user")
-def add_user(userName="", nickName="", password=""):
+def add_user(userName="", nickName="", password="", **kwargs):
     req_url = "/dev-api/system/user"
     req_method = "POST"
     req_json = {
@@ -19,6 +19,12 @@ def add_user(userName="", nickName="", password=""):
         "postIds": [],  # 岗位ID
         "roleIds": []  # 角色
     }
+    req_field = {
+        "req_json_all": {"jsonpath": "$"},
+        "userName": {"jsonpath": "$.userName"},
+        "nickName": {"jsonpath": "$.nickName"},
+        "password": {"jsonpath": "$.password"},
+    }
     rsp_field = {
         "msg": {"jsonpath": "$.msg"}
     }
@@ -28,10 +34,46 @@ def add_user(userName="", nickName="", password=""):
     }
     return locals()
 
+@Api.json
+@allure.step("修改用户-mod_user")
+def mod_user(**kwargs):
+    req_url = "/dev-api/system/user"
+    req_method = "PUT"
+    req_json = {
+        "createBy": "",
+        "createTime": "",
+        "updateBy": None,
+        "updateTime": None,
+        "remark": "",
+        "userId": None,
+        "deptId": None,
+        "userName": "",
+        "nickName": "",
+        "email": "",
+        "phonenumber": "",
+        "sex": "0",
+        "avatar": "",
+        "password": "",
+        "status": "0",
+        "delFlag": "0",
+        "loginIp": "",
+        "loginDate": None,
+        "dept": None,
+        "roles": [],
+        "roleIds": [],
+        "postIds": [],
+        "roleId": None,
+        "admin": False
+    }
+    rsp_check = {
+        "msg": "操作成功",
+        "code": 200,
+    }
+    return locals()
 
 @Api.urlencoded
 @allure.step("查看用户")
-def lst_user():
+def lst_user(**kwargs):
     req_url = "/dev-api/system/user/list"
     req_method = "GET"
     req_params = {
@@ -43,10 +85,18 @@ def lst_user():
     }
     return locals()
 
+@Api.json
+@allure.step("删除用户")
+def lst_user_by_id(userId="", **kwargs):
+    req_url = f"/dev-api/system/user/{userId}"
+    req_method = "GET"
+    req_json = {}
+    auto_fill = False
+    return locals()
 
 @Api.json
 @allure.step("删除用户")
-def rmv_user(userId=""):
+def rmv_user(userId="", **kwargs):
     req_url = f"/dev-api/system/user/{userId}"
     req_method = "DELETE"
     req_json = {}
@@ -56,7 +106,7 @@ def rmv_user(userId=""):
 
 @Api.form_data
 @allure.step("通过导入文件来增加用户")
-def mod_user_by_upload(file_name="", updateSupport=0):
+def mod_user_by_upload(file_name="", updateSupport=0, **kwargs):
     req_url = "/dev-api/system/user/importData"
     req_method = "POST"
     req_params = {
