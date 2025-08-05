@@ -65,6 +65,9 @@ def mod_user(**kwargs):
         "roleId": None,
         "admin": False
     }
+    req_field = {
+        "deptId": {"jsonpath": "$.deptId"},
+    }
     rsp_check = {
         "msg": "操作成功",
         "code": 200,
